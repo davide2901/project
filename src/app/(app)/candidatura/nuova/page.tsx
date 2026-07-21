@@ -17,9 +17,9 @@ export default function NewApplicationPage() {
           Nuova candidatura
         </h1>
         <p className="max-w-prose text-sm text-[var(--muted)]">
-          Incolla offerta o link. L&apos;AI riformulerà solo competenze già nel
-          tuo CV di fallback — niente invenzioni. La chiamata a Claude resta in
-          attesa del prototipo HTML (prompt + JSON schema).
+          Incolla offerta o link. Claude estrae azienda/ruolo, cerca fatti
+          reali e genera CV, lettera ed email usando solo le competenze già nel
+          tuo profilo.
         </p>
       </header>
       <NewApplicationForm />

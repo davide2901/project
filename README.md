@@ -6,7 +6,7 @@ Web app mobile-first per candidature su misura. Ogni utente vede solo i propri d
 
 | Fase | Contenuto | Stato |
 |------|-----------|--------|
-| 1 | Setup, auth, profilo, stub Nuova Candidatura | In corso (LLM in attesa prototipo HTML) |
+| 1 | Setup, auth, profilo, Nuova Candidatura + Claude | Completata (schema allineabile al prototipo HTML) |
 | 2 | Figma clone/pagina + text nodes + PDF | Pianificata |
 | 3 | Archivio applications | Stub UI |
 | 4 | Discovery aziende | Pianificata |
@@ -46,6 +46,10 @@ Apri [http://localhost:3000](http://localhost:3000).
 3. **Onestà AI** — riformulare/riordinare competenze esistenti; fatti web o “non reperibile”.
 4. **Stage** — matching include stage/tirocinio/internship secondo `job_preference`.
 
-## Prossimo passo (LLM)
+## Setup da smartphone
 
-Prima di implementare Claude: fornire il **prototipo HTML** con struttura dei prompt e JSON schema.
+Guida in 4 passi: [`docs/SETUP-MOBILE.md`](docs/SETUP-MOBILE.md).
+
+## Claude (Fase 1)
+
+Prompt + JSON schema in `src/lib/ai/`. Se hai un prototipo HTML con prompt diversi, possiamo allinearli.
