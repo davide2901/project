@@ -43,7 +43,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   }, [state.success]);
 
   return (
-    <form action={action} className="space-y-8">
+    <form action={action} className="space-y-8 pb-4">
       <section className="space-y-4">
         <header>
           <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
@@ -198,14 +198,28 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         </p>
       ) : null}
       {state.success ? (
-        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+        <p
+          className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          role="status"
+        >
           Profilo salvato.
         </p>
       ) : null}
 
-      <button type="submit" className="btn-primary" disabled={pending}>
-        {pending ? "Salvataggio..." : "Salva profilo"}
-      </button>
+      {/* Spazio per la barra fissa sopra la bottom nav */}
+      <div className="h-16" aria-hidden />
+
+      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-[var(--line)] bg-[color-mix(in_oklab,var(--surface)_96%,transparent)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-2.5">
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={pending}
+          >
+            {pending ? "Salvataggio..." : "Salva profilo"}
+          </button>
+        </div>
+      </div>
     </form>
   );
 }

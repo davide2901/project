@@ -1,17 +1,17 @@
 import Link from "next/link";
 
-import { signOut } from "@/app/actions/auth";
-
-const NAV = [
-  { href: "/profilo", label: "Profilo" },
-  { href: "/candidatura/nuova", label: "Nuova" },
-  { href: "/archivio", label: "Archivio" },
-];
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 type AppShellProps = {
   children: React.ReactNode;
   email?: string | null;
 };
+
+function initialsFromEmail(email?: string | null) {
+  if (!email) return "A";
+  const local = email.split("@")[0] ?? "A";
+  return local.slice(0, 1).toUpperCase();
+}
 
 export function AppShell({ children, email }: AppShellProps) {
   return (
@@ -19,38 +19,24 @@ export function AppShell({ children, email }: AppShellProps) {
       <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <Link
-            href="/profilo"
+            href="/home"
             className="font-[family-name:var(--font-display)] text-lg tracking-tight text-[var(--ink)]"
           >
             SuMisura
           </Link>
-          <nav className="flex items-center gap-1 text-sm">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md px-2.5 py-1.5 text-[var(--muted)] transition hover:bg-[var(--tint)] hover:text-[var(--ink)]"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <Link
+            href="/account"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)] hover:bg-[var(--tint)]"
+            aria-label="Account"
+          >
+            {initialsFromEmail(email)}
+          </Link>
         </div>
-        {email ? (
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-2 text-xs text-[var(--muted)]">
-            <span className="truncate">{email}</span>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-md px-2 py-1 hover:bg-[var(--tint)] hover:text-[var(--ink)]"
-              >
-                Esci
-              </button>
-            </form>
-          </div>
-        ) : null}
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-28">
+        {children}
+      </main>
+      <BottomNav />
     </div>
   );
 }

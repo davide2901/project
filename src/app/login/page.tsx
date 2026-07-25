@@ -13,7 +13,7 @@ type LoginPageProps = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const next = params.next?.startsWith("/") ? params.next : "/profilo";
+  const next = params.next?.startsWith("/") ? params.next : "/home";
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-12">

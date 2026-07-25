@@ -1,5 +1,7 @@
 export type JobPreference = "lavoro" | "stage" | "entrambi";
 
+export type PositionType = "lavoro" | "stage" | "non_chiaro";
+
 export type Profile = {
   id: string;
   user_id: string;
@@ -26,6 +28,29 @@ export type ProfileUpdate = Partial<
     | "companies_of_interest"
   >
 >;
+
+export type Application = {
+  id: string;
+  user_id: string;
+  company_name: string;
+  role_title: string;
+  position_type: PositionType;
+  offer_source: string | null;
+  offer_fingerprint: string;
+  ats_keywords: string[];
+  matched_skills: string[];
+  omitted_offer_requirements: string[];
+  company_research: Record<string, unknown> | null;
+  optimized_cv_text: string | null;
+  cover_letter: string | null;
+  email_subject: string | null;
+  email_body: string | null;
+  honesty_notes: string[];
+  status: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export type Json =
   | string
@@ -92,6 +117,62 @@ export type Database = {
             foreignKeyName: "profiles_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      applications: {
+        Row: Application;
+        Insert: {
+          id?: string;
+          user_id: string;
+          company_name: string;
+          role_title: string;
+          position_type?: PositionType;
+          offer_source?: string | null;
+          offer_fingerprint: string;
+          ats_keywords?: string[];
+          matched_skills?: string[];
+          omitted_offer_requirements?: string[];
+          company_research?: Json | null;
+          optimized_cv_text?: string | null;
+          cover_letter?: string | null;
+          email_subject?: string | null;
+          email_body?: string | null;
+          honesty_notes?: string[];
+          status?: string;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          company_name?: string;
+          role_title?: string;
+          position_type?: PositionType;
+          offer_source?: string | null;
+          offer_fingerprint?: string;
+          ats_keywords?: string[];
+          matched_skills?: string[];
+          omitted_offer_requirements?: string[];
+          company_research?: Json | null;
+          optimized_cv_text?: string | null;
+          cover_letter?: string | null;
+          email_subject?: string | null;
+          email_body?: string | null;
+          honesty_notes?: string[];
+          status?: string;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "applications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },

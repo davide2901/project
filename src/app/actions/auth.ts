@@ -15,7 +15,7 @@ export async function signInWithPassword(
 ): Promise<AuthActionState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/profilo");
+  const next = String(formData.get("next") ?? "/home");
 
   if (!email || !password) {
     return { error: "Inserisci email e password." };
@@ -28,7 +28,7 @@ export async function signInWithPassword(
     return { error: error.message };
   }
 
-  redirect(next.startsWith("/") ? next : "/profilo");
+  redirect(next.startsWith("/") ? next : "/home");
 }
 
 export async function signUpWithPassword(
@@ -69,7 +69,7 @@ export async function signUpWithPassword(
         .update({ full_name: fullName })
         .eq("user_id", data.user.id);
     }
-    redirect("/profilo");
+    redirect("/home");
   }
 
   return {
@@ -78,7 +78,7 @@ export async function signUpWithPassword(
   };
 }
 
-export async function signInWithGoogle(next = "/profilo") {
+export async function signInWithGoogle(next = "/home") {
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 

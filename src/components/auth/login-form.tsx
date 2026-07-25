@@ -14,7 +14,7 @@ type LoginFormProps = {
   next?: string;
 };
 
-export function LoginForm({ next = "/profilo" }: LoginFormProps) {
+export function LoginForm({ next = "/home" }: LoginFormProps) {
   const [state, action, pending] = useActionState(signInWithPassword, initial);
 
   return (

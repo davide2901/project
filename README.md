@@ -7,8 +7,8 @@ Web app mobile-first per candidature su misura. Ogni utente vede solo i propri d
 | Fase | Contenuto | Stato |
 |------|-----------|--------|
 | 1 | Setup, auth, profilo, Nuova Candidatura + Claude | Completata (schema allineabile al prototipo HTML) |
-| 2 | Figma clone/pagina + text nodes + PDF | Pianificata |
-| 3 | Archivio applications | Stub UI |
+| 2 | Figma clone/pagina + text nodes + PDF | PDF/print + link Figma da risultato; clone API in arrivo |
+| 3 | Archivio applications | Completata (migration `002_applications.sql`) |
 | 4 | Discovery aziende | Pianificata |
 | 5 | Cron automation | Opzionale |
 
@@ -28,6 +28,9 @@ Compila `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLI
 Nel SQL Editor del progetto Supabase esegui:
 
 [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql)
+e
+[`supabase/migrations/002_applications.sql`](supabase/migrations/002_applications.sql)
+(archivio, stats, anti-duplicati)
 
 Attiva **Email/Password** e (opzionale) **Google** in Authentication → Providers. Redirect URL: `{SITE_URL}/auth/callback`.
 

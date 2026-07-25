@@ -11,10 +11,17 @@ export type ProfileActionState = {
 };
 
 function parseList(raw: string): string[] {
-  return raw
-    .split(/[\n,;]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw.split(/[\n,;]+/)) {
+    const trimmed = item.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
 }
 
 export async function updateProfile(

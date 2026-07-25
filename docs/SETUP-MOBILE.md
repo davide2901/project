@@ -20,9 +20,10 @@ Incollale qui in chat così le metto in `.env.example` / ti dico dove salvarle (
 ## 3. Schema database
 
 1. Menu → **SQL** → **New query**  
-2. Apri su GitHub il file  
-   `supabase/migrations/001_initial_schema.sql`  
-   (nella PR) → Copia tutto  
+2. Apri su GitHub i file  
+   `supabase/migrations/001_initial_schema.sql` e  
+   `supabase/migrations/002_applications.sql`  
+   → Copia ed esegui entrambi (uno alla volta)  
 3. Incolla nell’editor SQL → **Run**
 
 ## 4. Auth

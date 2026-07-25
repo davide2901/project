@@ -96,7 +96,7 @@ export function RegisterForm() {
         <span className="absolute inset-x-0 top-1/2 h-px bg-[var(--line)]" />
       </div>
 
-      <form action={signInWithGoogle.bind(null, "/profilo")}>
+      <form action={signInWithGoogle.bind(null, "/home")}>
         <button type="submit" className="btn-secondary w-full">
           Continua con Google
         </button>

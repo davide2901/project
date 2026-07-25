@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ProfileForm } from "@/components/profile/profile-form";
@@ -59,14 +58,8 @@ export default async function ProfilePage() {
           Profilo
         </h1>
         <p className="max-w-prose text-sm text-[var(--muted)]">
-          Configura CV, competenze e preferenza lavoro/stage. Poi avvia una{" "}
-          <Link
-            href="/candidatura/nuova"
-            className="font-medium text-[var(--accent)] underline-offset-2 hover:underline"
-          >
-            nuova candidatura
-          </Link>
-          .
+          Configura CV, competenze e preferenza lavoro/stage. La generazione
+          candidatura resta in Home.
         </p>
       </header>
       <ProfileForm profile={profile as Profile} />
