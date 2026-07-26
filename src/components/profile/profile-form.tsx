@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 
 import {
   updateProfile,
@@ -44,9 +44,32 @@ function fromProfile(profile: Profile): FormValues {
   };
 }
 
+function sameValues(a: FormValues, b: FormValues): boolean {
+  return (
+    a.full_name === b.full_name &&
+    a.job_preference === b.job_preference &&
+    a.skills === b.skills &&
+    a.cv_fallback_text === b.cv_fallback_text &&
+    a.companies_of_interest === b.companies_of_interest &&
+    a.figma_cv_url === b.figma_cv_url &&
+    a.figma_portfolio_url === b.figma_portfolio_url
+  );
+}
+
 export function ProfileForm({ profile }: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfile, initial);
   const [values, setValues] = useState<FormValues>(() => fromProfile(profile));
+  const [saved, setSaved] = useState<FormValues>(() => fromProfile(profile));
+  const lastSuccess = useRef(false);
+
+  const dirty = !sameValues(values, saved);
+
+  useEffect(() => {
+    if (state.success && !lastSuccess.current) {
+      setSaved(values);
+    }
+    lastSuccess.current = state.success;
+  }, [state.success, values]);
 
   const onExtracted = useCallback((extract: CvExtract) => {
     setValues((prev) => ({
@@ -230,7 +253,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             {state.error}
           </p>
         ) : null}
-        {state.success ? (
+        {state.success && !dirty ? (
           <p
             className="rounded-md bg-[var(--tint)] px-3 py-2 text-sm text-[var(--ink)]"
             role="status"
@@ -239,14 +262,22 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           </p>
         ) : null}
 
-        <div className="sticky-action-bar-spacer" aria-hidden />
-        <div className="sticky-action-bar">
-          <div className="mx-auto w-full max-w-3xl">
-            <button type="submit" className="btn-primary w-full" disabled={pending}>
-              {pending ? "Salvataggio..." : "Salva profilo"}
-            </button>
-          </div>
-        </div>
+        {dirty ? (
+          <>
+            <div className="sticky-action-bar-spacer" aria-hidden />
+            <div className="sticky-action-bar">
+              <div className="mx-auto w-full max-w-3xl">
+                <button
+                  type="submit"
+                  className="btn-primary w-full"
+                  disabled={pending}
+                >
+                  {pending ? "Salvataggio..." : "Salva profilo"}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : null}
       </form>
     </div>
   );
