@@ -1,0 +1,59 @@
+{
+  "company_name": "Bending Spoons",
+  "role_title": "Frontend Engineer",
+  "position_type": "lavoro",
+  "ats_keywords": [
+    "React",
+    "TypeScript",
+    "performance",
+    "Next.js",
+    "design system",
+    "testing"
+  ],
+  "matched_skills": [
+    "React",
+    "TypeScript",
+    "Next.js",
+    "Tailwind CSS",
+    "Git"
+  ],
+  "omitted_offer_requirements": [
+    "2+ anni di esperienza esplicita (non quantitata nel CV)",
+    "esperienza consumer a grande scala",
+    "inglese scritto certificato"
+  ],
+  "company_research": {
+    "summary": "Bending Spoons è una product company italiana nota per acquisizioni e app consumer (es. Evernote). Sede principale a Milano; cultura orientata a ownership e qualità tecnica.",
+    "facts": [
+      {
+        "label": "Sede",
+        "value": "Milano, Italia",
+        "source": "https://bendingspoons.com"
+      },
+      {
+        "label": "Settore",
+        "value": "Software / consumer apps",
+        "source": "https://bendingspoons.com"
+      },
+      {
+        "label": "Dimensione team",
+        "value": "non reperibile",
+        "source": null
+      }
+    ],
+    "unavailable_notes": [
+      "Headcount aggiornato non verificato da fonti pubbliche recenti"
+    ]
+  },
+  "optimized_cv_text": "Davide Test — Frontend Developer\n\nProfilo allineato a prodotti web mobile-first con React e TypeScript. Esperienza su Next.js, Tailwind e integrazioni backend (Supabase Auth + RLS).\n\nCompetenze chiave per il ruolo: React, TypeScript, Next.js, Tailwind CSS, Git.\nProgetti: SuMisura (candidature AI), dashboard dati, prototipi UI.\nLingue: Italiano; Inglese B2.",
+  "cover_letter": "Gentile team Bending Spoons,\n\nscrivo per la posizione di Frontend Engineer. Porto esperienza concreta su React e TypeScript in prodotti web mobile-first, con attenzione a qualità del codice e integrazioni reali (auth, dati, UI system).\n\nNon invento competenze: il mio percorso è ancora in crescita sulla scala consumer, ma ho già costruito flussi end-to-end e UI curate. Sarei felice di approfondire in un colloquio.\n\nCordiali saluti,\nDavide Test",
+  "email_draft": {
+    "subject": "Candidatura Frontend Engineer — Davide Test",
+    "body": "Buongiorno,\n\nallego CV e lettera motivazionale per la posizione di Frontend Engineer.\nResto a disposizione per un colloquio.\n\nCordiali saluti,\nDavide Test"
+  },
+  "honesty_notes": [
+    "Anni di esperienza non quantificati numericamente nel CV originale",
+    "Inglese indicato come B2, non certificato",
+    "Headcount aziendale non verificabile al momento della generazione"
+  ]
+}

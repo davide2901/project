@@ -155,20 +155,5 @@ create policy "profiles_delete_own"
   using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- Nota Fase 3 (non eseguire ancora): applications
--- create table public.applications (
---   id uuid primary key default gen_random_uuid(),
---   user_id uuid not null references public.users (id) on delete cascade,
---   company_name text not null,
---   role_title text not null,
---   offer_source text,
---   company_research jsonb,
---   optimized_cv_text text,
---   cover_letter text,
---   email_draft text,
---   figma_duplicate_file_key text,
---   status text not null default 'draft',
---   deleted_at timestamptz,
---   created_at timestamptz not null default now(),
---   updated_at timestamptz not null default now()
--- );
+-- Applications: vedi 002_applications.sql
+-- ---------------------------------------------------------------------------

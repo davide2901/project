@@ -27,7 +27,7 @@ export function RegisterForm() {
         <p className="text-center text-sm text-[var(--muted)]">
           <Link
             href="/login"
-            className="font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+            className="text-link"
           >
             Torna al login
           </Link>
@@ -92,11 +92,12 @@ export function RegisterForm() {
       </form>
 
       <div className="relative text-center text-xs uppercase tracking-wider text-[var(--muted)]">
-        <span className="relative z-10 bg-[var(--surface)] px-3">oppure</span>
+        <span className="relative z-10 bg-[var(--background)] px-3">oppure</span>
         <span className="absolute inset-x-0 top-1/2 h-px bg-[var(--line)]" />
       </div>
 
-      <form action={signInWithGoogle.bind(null, "/profilo")}>
+      <form action={signInWithGoogle}>
+        <input type="hidden" name="next" value="/home" />
         <button type="submit" className="btn-secondary w-full">
           Continua con Google
         </button>
@@ -106,7 +107,7 @@ export function RegisterForm() {
         Hai già un account?{" "}
         <Link
           href="/login"
-          className="font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+          className="text-link"
         >
           Accedi
         </Link>

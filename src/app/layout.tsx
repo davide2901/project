@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 
 import "./globals.css";
@@ -28,6 +28,29 @@ export const metadata: Metadata = {
   },
   description:
     "Ottimizza candidature di lavoro e stage su misura. I tuoi dati restano isolati per account.",
+  applicationName: "SuMisura",
+  appleWebApp: {
+    capable: true,
+    // black-translucent: il contenuto (e il bg) vanno sotto la status bar
+    statusBarStyle: "black-translucent",
+    title: "SuMisura",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  // Default landing / first paint: evita la barra crema su iOS Safari
+  themeColor: "#070f1a",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -40,7 +63,7 @@ export default function RootLayout({
       lang="it"
       className={`${dmSans.variable} ${fraunces.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-dvh flex flex-col overscroll-none">{children}</body>
     </html>
   );
 }

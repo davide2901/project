@@ -20,29 +20,29 @@ Incollale qui in chat così le metto in `.env.example` / ti dico dove salvarle (
 ## 3. Schema database
 
 1. Menu → **SQL** → **New query**  
-2. Apri su GitHub il file  
+2. Apri su GitHub i file  
    `supabase/migrations/001_initial_schema.sql`  
-   (nella PR) → Copia tutto  
+   e poi `supabase/migrations/002_applications.sql`  
+   → Copia tutto (uno per volta)  
 3. Incolla nell’editor SQL → **Run**
 
 ## 4. Auth
 
 1. **Authentication** → **Providers**  
 2. Lascia **Email** attivo  
-3. (Opzionale) **Google** → abilita e segui le istruzioni Google Cloud  
+3. Per **Google**: guida completa in `docs/GOOGLE-AUTH.md` (serve OAuth Client su Google Cloud + enable in Supabase)
 
-Redirect URL da aggiungere (quando avrai un URL app, es. Vercel):
+Redirect già usati in produzione:
 
-`https://TUO-DOMINIO/auth/callback`
+`https://sumisura-eight.vercel.app/auth/callback`  
+Locale: `http://localhost:3000/auth/callback`
 
-Per test locale (da PC): `http://localhost:3000/auth/callback`
+## 5. Chiave Gemini (Google AI Studio)
 
-## 5. Chiave Claude (Anthropic)
-
-1. Apri [https://console.anthropic.com](https://console.anthropic.com)  
-2. **API keys** → Create → copia `sk-ant-...`  
-3. Incollala in chat (o salvala tu in Vercel → Environment Variables come `ANTHROPIC_API_KEY`)
+1. Apri [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)  
+2. **Create API key** → copia `AIza...`  
+3. Incollala in chat (o salvala tu in Vercel → Environment Variables come `GEMINI_API_KEY`)
 
 ---
 
-Quando hai **Project URL**, **anon key** e (se vuoi generare candidature) **ANTHROPIC_API_KEY**, mandameli in chat: ti guido al passo successivo (deploy / env).
+Quando hai **Project URL**, **anon key** e (se vuoi generare candidature) **GEMINI_API_KEY**, mandameli in chat: ti guido al passo successivo (deploy / env).

@@ -1,14 +1,17 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
+import { isAiMockEnabled, mockGenerateApplicationPackage } from "@/lib/ai/mock";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
 import {
   applicationPackageJsonSchema,
   applicationPackageSchema,
   type ApplicationPackage,
 } from "@/lib/ai/schema";
+import { applyPreferenceFilter } from "@/lib/application/preference";
+import type { CvSourceKind } from "@/lib/cv/resolve-source";
 import type { JobPreference } from "@/lib/types/database";
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
 type GenerateInput = {
   offerInput: string;
@@ -19,35 +22,18 @@ type GenerateInput = {
     job_preference: JobPreference;
     companies_of_interest: string[];
   };
+  cvSourceKind?: CvSourceKind;
+  figmaError?: string;
 };
 
 function getClient() {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "ANTHROPIC_API_KEY mancante. Aggiungila nelle variabili d'ambiente.",
+      "GEMINI_API_KEY mancante. Aggiungila nelle variabili d'ambiente oppure attiva USE_AI_MOCK=true.",
     );
   }
-  return new Anthropic({ apiKey });
-}
-
-function extractToolPayload(
-  content: Anthropic.Messages.ContentBlock[],
-): unknown {
-  for (const block of content) {
-    if (block.type === "tool_use" && block.name === "submit_application_package") {
-      return block.input;
-    }
-  }
-  return null;
-}
-
-function extractTextFallback(content: Anthropic.Messages.ContentBlock[]): string {
-  return content
-    .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("\n")
-    .trim();
+  return new GoogleGenAI({ apiKey });
 }
 
 function tryParseJsonObject(text: string): unknown {
@@ -63,47 +49,23 @@ function tryParseJsonObject(text: string): unknown {
   }
 }
 
-export async function generateApplicationPackage(
-  input: GenerateInput,
-): Promise<ApplicationPackage> {
-  const client = getClient();
+function parsePackage(text: string): ApplicationPackage {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error(
+      "Gemini non ha restituito un pacchetto strutturato. Riprova.",
+    );
+  }
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 8192,
-    system: buildSystemPrompt(input.profile),
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 5,
-      },
-      {
-        name: "submit_application_package",
-        description:
-          "Invia il pacchetto candidatura finale in JSON strutturato. Obbligatorio.",
-        input_schema: applicationPackageJsonSchema as unknown as Anthropic.Tool.InputSchema,
-      },
-    ],
-    tool_choice: { type: "auto" },
-    messages: [
-      {
-        role: "user",
-        content: buildUserPrompt(input.offerInput),
-      },
-    ],
-  });
-
-  let payload = extractToolPayload(response.content);
-
-  if (!payload) {
-    payload = tryParseJsonObject(extractTextFallback(response.content));
+  let payload: unknown;
+  try {
+    payload = JSON.parse(trimmed);
+  } catch {
+    payload = tryParseJsonObject(trimmed);
   }
 
   if (!payload) {
-    throw new Error(
-      "Claude non ha restituito un pacchetto strutturato. Riprova.",
-    );
+    throw new Error("Gemini non ha restituito un JSON valido. Riprova.");
   }
 
   const parsed = applicationPackageSchema.safeParse(payload);
@@ -117,4 +79,58 @@ export async function generateApplicationPackage(
   }
 
   return parsed.data;
+}
+
+export async function generateApplicationPackage(
+  input: GenerateInput,
+): Promise<ApplicationPackage> {
+  if (isAiMockEnabled()) {
+    const mocked = await mockGenerateApplicationPackage(input.offerInput);
+    return applyPreferenceFilter(mocked, input.profile.job_preference);
+  }
+
+  const ai = getClient();
+  const contents = buildUserPrompt(input.offerInput);
+  const systemInstruction = buildSystemPrompt(input.profile, {
+    cvSourceKind: input.cvSourceKind,
+    figmaError: input.figmaError,
+  });
+  const schema = applicationPackageJsonSchema as Record<string, unknown>;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents,
+      config: {
+        systemInstruction,
+        temperature: 0.4,
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseJsonSchema: schema,
+      },
+    });
+    const pkg = parsePackage(response.text ?? "");
+    return applyPreferenceFilter(pkg, input.profile.job_preference);
+  } catch (firstError) {
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.4,
+          responseMimeType: "application/json",
+          responseJsonSchema: schema,
+        },
+      });
+      const pkg = parsePackage(response.text ?? "");
+      return applyPreferenceFilter(pkg, input.profile.job_preference);
+    } catch {
+      const message =
+        firstError instanceof Error
+          ? firstError.message
+          : "Errore sconosciuto nella generazione.";
+      throw new Error(message);
+    }
+  }
 }

@@ -1,0 +1,9 @@
+Satispay — Junior Full Stack (Stage / Tirocinio)
+
+Offerta di stage retribuito a Milano o remoto.
+Stack: React, Node.js, TypeScript.
+Cosa farai: feature su dashboard merchant, bugfix, code review con mentorship.
+Requisiti: basi di React e TypeScript, curiosità su fintech.
+Plus: esperienza con API REST e Git.
+
+Durata: 6 mesi. Possibilità di assunzione.

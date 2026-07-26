@@ -1,211 +1,253 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useCallback, useState } from "react";
 
 import {
   updateProfile,
   type ProfileActionState,
 } from "@/app/actions/profile";
+import { CvUpload } from "@/components/profile/cv-upload";
+import type { CvExtract } from "@/lib/ai/cv-extract-schema";
 import type { JobPreference, Profile } from "@/lib/types/database";
 
 const initial: ProfileActionState = { error: null, success: false };
 
-const PREFERENCES: { value: JobPreference; label: string; hint: string }[] = [
-  {
-    value: "lavoro",
-    label: "Lavoro",
-    hint: "Posizioni full/part-time, no stage",
-  },
-  {
-    value: "stage",
-    label: "Stage / Tirocinio",
-    hint: "Stage, tirocinio, internship",
-  },
-  {
-    value: "entrambi",
-    label: "Entrambi",
-    hint: "Lavoro e stage/tirocini",
-  },
+const PREFERENCES: { value: JobPreference; label: string }[] = [
+  { value: "lavoro", label: "Lavoro" },
+  { value: "stage", label: "Stage" },
+  { value: "entrambi", label: "Entrambi" },
 ];
 
 type ProfileFormProps = {
   profile: Profile;
 };
 
+type FormValues = {
+  full_name: string;
+  job_preference: JobPreference;
+  skills: string;
+  cv_fallback_text: string;
+  companies_of_interest: string;
+  figma_cv_url: string;
+  figma_portfolio_url: string;
+};
+
+function fromProfile(profile: Profile): FormValues {
+  return {
+    full_name: profile.full_name ?? "",
+    job_preference: profile.job_preference,
+    skills: profile.skills.join(", "),
+    cv_fallback_text: profile.cv_fallback_text ?? "",
+    companies_of_interest: profile.companies_of_interest.join("\n"),
+    figma_cv_url: profile.figma_cv_url ?? "",
+    figma_portfolio_url: profile.figma_portfolio_url ?? "",
+  };
+}
+
 export function ProfileForm({ profile }: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfile, initial);
+  const [values, setValues] = useState<FormValues>(() => fromProfile(profile));
 
-  useEffect(() => {
-    if (state.success) {
-      const t = window.setTimeout(() => undefined, 0);
-      return () => window.clearTimeout(t);
-    }
-  }, [state.success]);
+  const onExtracted = useCallback((extract: CvExtract) => {
+    setValues((prev) => ({
+      ...prev,
+      full_name: extract.full_name?.trim() || prev.full_name,
+      skills:
+        extract.skills.length > 0 ? extract.skills.join(", ") : prev.skills,
+      cv_fallback_text: extract.cv_fallback_text || prev.cv_fallback_text,
+      companies_of_interest:
+        extract.companies_of_interest.length > 0
+          ? extract.companies_of_interest.join("\n")
+          : prev.companies_of_interest,
+      job_preference: extract.job_preference ?? prev.job_preference,
+    }));
+  }, []);
+
+  const skillChips = values.skills
+    .split(/[\n,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   return (
-    <form action={action} className="space-y-8">
-      <section className="space-y-4">
-        <header>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Anagrafica
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Dati base e link ai file Figma (sola lettura in Fase 1).
-          </p>
-        </header>
-        <div className="space-y-1.5">
-          <label htmlFor="full_name" className="text-sm font-medium">
+    <div className="space-y-8">
+      <CvUpload onExtracted={onExtracted} />
+
+      <form action={action} className="space-y-8">
+        <section className="space-y-3">
+          <label htmlFor="full_name" className="label-caps">
             Nome completo
           </label>
           <input
             id="full_name"
             name="full_name"
             type="text"
-            defaultValue={profile.full_name ?? ""}
+            value={values.full_name}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, full_name: e.target.value }))
+            }
             className="field"
             placeholder="Mario Rossi"
           />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="figma_cv_url" className="text-sm font-medium">
+        </section>
+
+        <section className="space-y-3">
+          <p className="label-caps">Preferenza</p>
+          <fieldset className="flex rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1">
+            <legend className="sr-only">Preferenza lavoro o stage</legend>
+            {PREFERENCES.map((opt) => (
+              <label
+                key={opt.value}
+                className="flex min-h-[2.75rem] flex-1 cursor-pointer items-center justify-center rounded-lg px-2 py-2.5 text-center text-sm font-semibold text-[var(--ink)] transition has-[:checked]:bg-[var(--btn)] has-[:checked]:text-white"
+              >
+                <input
+                  type="radio"
+                  name="job_preference"
+                  value={opt.value}
+                  checked={values.job_preference === opt.value}
+                  onChange={() =>
+                    setValues((v) => ({ ...v, job_preference: opt.value }))
+                  }
+                  className="sr-only"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </fieldset>
+        </section>
+
+        <section className="space-y-3">
+          <label htmlFor="skills" className="label-caps">
+            Competenze
+          </label>
+          {skillChips.length > 0 ? (
+            <ul className="flex flex-wrap gap-2" aria-hidden>
+              {skillChips.map((skill) => (
+                <li
+                  key={skill}
+                  className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--ink)]"
+                >
+                  {skill}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <textarea
+            id="skills"
+            name="skills"
+            rows={3}
+            value={values.skills}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, skills: e.target.value }))
+            }
+            className="field resize-y"
+            placeholder="React, TypeScript, Figma"
+          />
+          <p className="text-xs text-[var(--muted)]">
+            Separate da virgola. Solo competenze già possedute.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <label htmlFor="cv_fallback_text" className="label-caps">
+            CV
+          </label>
+          <textarea
+            id="cv_fallback_text"
+            name="cv_fallback_text"
+            rows={8}
+            value={values.cv_fallback_text}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, cv_fallback_text: e.target.value }))
+            }
+            className="field resize-y"
+            placeholder="Incolla qui il tuo CV oppure caricalo sopra..."
+          />
+        </section>
+
+        <section className="space-y-3">
+          <label htmlFor="companies_of_interest" className="label-caps">
+            Aziende di interesse
+          </label>
+          <textarea
+            id="companies_of_interest"
+            name="companies_of_interest"
+            rows={3}
+            value={values.companies_of_interest}
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                companies_of_interest: e.target.value,
+              }))
+            }
+            className="field resize-y"
+            placeholder={"Acme Spa\nBeta Studio"}
+          />
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-3">
+            <label htmlFor="figma_cv_url" className="label-caps">
               Link Figma CV
             </label>
             <input
               id="figma_cv_url"
               name="figma_cv_url"
               type="url"
-              defaultValue={profile.figma_cv_url ?? ""}
+              value={values.figma_cv_url}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, figma_cv_url: e.target.value }))
+              }
               className="field"
-              placeholder="https://www.figma.com/design/..."
+              placeholder="https://www.figma.com/..."
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor="figma_portfolio_url" className="text-sm font-medium">
+          <div className="space-y-3">
+            <label htmlFor="figma_portfolio_url" className="label-caps">
               Link Figma Portfolio
             </label>
             <input
               id="figma_portfolio_url"
               name="figma_portfolio_url"
               type="url"
-              defaultValue={profile.figma_portfolio_url ?? ""}
+              value={values.figma_portfolio_url}
+              onChange={(e) =>
+                setValues((v) => ({
+                  ...v,
+                  figma_portfolio_url: e.target.value,
+                }))
+              }
               className="field"
-              placeholder="https://www.figma.com/design/..."
+              placeholder="https://www.figma.com/..."
             />
           </div>
+        </section>
+
+        {state.error ? (
+          <p
+            className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+            role="alert"
+          >
+            {state.error}
+          </p>
+        ) : null}
+        {state.success ? (
+          <p
+            className="rounded-md bg-[var(--tint)] px-3 py-2 text-sm text-[var(--ink)]"
+            role="status"
+          >
+            Profilo salvato.
+          </p>
+        ) : null}
+
+        <div className="sticky-action-bar-spacer" aria-hidden />
+        <div className="sticky-action-bar">
+          <div className="mx-auto w-full max-w-3xl">
+            <button type="submit" className="btn-primary w-full" disabled={pending}>
+              {pending ? "Salvataggio..." : "Salva profilo"}
+            </button>
+          </div>
         </div>
-      </section>
-
-      <section className="space-y-4">
-        <header>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Preferenza posizioni
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Include esplicitamente stage, tirocinio e internship quando
-            selezionati.
-          </p>
-        </header>
-        <fieldset className="grid gap-3 sm:grid-cols-3">
-          <legend className="sr-only">Preferenza lavoro o stage</legend>
-          {PREFERENCES.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex cursor-pointer flex-col gap-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[var(--tint)]"
-            >
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <input
-                  type="radio"
-                  name="job_preference"
-                  value={opt.value}
-                  defaultChecked={profile.job_preference === opt.value}
-                  className="accent-[var(--accent)]"
-                />
-                {opt.label}
-              </span>
-              <span className="pl-6 text-xs text-[var(--muted)]">{opt.hint}</span>
-            </label>
-          ))}
-        </fieldset>
-      </section>
-
-      <section className="space-y-4">
-        <header>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Competenze
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Solo competenze già possedute. L&apos;AI non ne inventerà di nuove.
-          </p>
-        </header>
-        <div className="space-y-1.5">
-          <label htmlFor="skills" className="text-sm font-medium">
-            Elenco (una per riga o separate da virgola)
-          </label>
-          <textarea
-            id="skills"
-            name="skills"
-            rows={4}
-            defaultValue={profile.skills.join("\n")}
-            className="field resize-y"
-            placeholder={"React\nTypeScript\nFigma"}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <header>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            CV testuale (fallback)
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Usato in Fase 1 per l&apos;ottimizzazione testuale, finché Figma non
-            è collegato.
-          </p>
-        </header>
-        <textarea
-          id="cv_fallback_text"
-          name="cv_fallback_text"
-          rows={10}
-          defaultValue={profile.cv_fallback_text ?? ""}
-          className="field resize-y font-[family-name:var(--font-mono)] text-sm"
-          placeholder="Incolla qui il testo del tuo CV..."
-        />
-      </section>
-
-      <section className="space-y-4">
-        <header>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Aziende di interesse
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Base per la Discovery (Fase 4). Una per riga.
-          </p>
-        </header>
-        <textarea
-          id="companies_of_interest"
-          name="companies_of_interest"
-          rows={4}
-          defaultValue={profile.companies_of_interest.join("\n")}
-          className="field resize-y"
-          placeholder={"Acme Spa\nBeta Studio"}
-        />
-      </section>
-
-      {state.error ? (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {state.error}
-        </p>
-      ) : null}
-      {state.success ? (
-        <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
-          Profilo salvato.
-        </p>
-      ) : null}
-
-      <button type="submit" className="btn-primary" disabled={pending}>
-        {pending ? "Salvataggio..." : "Salva profilo"}
-      </button>
-    </form>
+      </form>
+    </div>
   );
 }

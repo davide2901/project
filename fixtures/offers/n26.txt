@@ -1,0 +1,6 @@
+N26 — Product Designer / Frontend (Berlin – remote EU)
+
+We are looking for a frontend-leaning product designer who can ship UI in React.
+Requirements: Figma fluency, HTML/CSS, basic React.
+Nice: design systems, accessibility, TypeScript.
+Language: English required; Italian is a plus.

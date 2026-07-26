@@ -27,10 +27,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // getUser() valida il JWT sul server Auth (non usare solo getSession qui).
+  // Sessione da cookie (locale): abbastanza per gate di navigazione.
+  // La validazione forte resta su RLS + getUser dove serve (login/mutazioni).
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const userId = session?.user?.id ?? null;
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
@@ -40,16 +42,16 @@ export async function updateSession(request: NextRequest) {
     isAuthRoute ||
     pathname.startsWith("/auth/callback");
 
-  if (!user && !isPublicRoute) {
+  if (!userId && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  if (userId && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/profilo";
+    url.pathname = "/home";
     return NextResponse.redirect(url);
   }
 

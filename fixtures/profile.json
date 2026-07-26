@@ -1,0 +1,22 @@
+{
+  "full_name": "Davide Test",
+  "skills": [
+    "React",
+    "TypeScript",
+    "Next.js",
+    "Supabase",
+    "Tailwind CSS",
+    "Node.js",
+    "Git"
+  ],
+  "cv_fallback_text": "Davide Test — Frontend Developer\n\nEsperienza nello sviluppo di web app mobile-first con React, TypeScript e Next.js. Ha integrato autenticazione e RLS con Supabase, UI con Tailwind, e flussi AI per prodotti interni.\n\nProgetti: candidature-app (SuMisura), dashboard dati, prototipi UI.\nLingue: Italiano (madrelingua), Inglese (B2).",
+  "job_preference": "entrambi",
+  "companies_of_interest": [
+    "Bending Spoons",
+    "Satispay",
+    "N26",
+    "Milanote"
+  ],
+  "figma_cv_url": null,
+  "figma_portfolio_url": null
+}

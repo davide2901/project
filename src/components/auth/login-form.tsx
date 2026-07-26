@@ -14,7 +14,7 @@ type LoginFormProps = {
   next?: string;
 };
 
-export function LoginForm({ next = "/profilo" }: LoginFormProps) {
+export function LoginForm({ next = "/home" }: LoginFormProps) {
   const [state, action, pending] = useActionState(signInWithPassword, initial);
 
   return (
@@ -63,11 +63,12 @@ export function LoginForm({ next = "/profilo" }: LoginFormProps) {
       </form>
 
       <div className="relative text-center text-xs uppercase tracking-wider text-[var(--muted)]">
-        <span className="relative z-10 bg-[var(--surface)] px-3">oppure</span>
+        <span className="relative z-10 bg-[var(--background)] px-3">oppure</span>
         <span className="absolute inset-x-0 top-1/2 h-px bg-[var(--line)]" />
       </div>
 
-      <form action={signInWithGoogle.bind(null, next)}>
+      <form action={signInWithGoogle}>
+        <input type="hidden" name="next" value={next} />
         <button type="submit" className="btn-secondary w-full">
           Continua con Google
         </button>

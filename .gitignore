@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.deploy-mcp-args.json
+.deploy-app.b64
+.deploy-call.json
+.tmp-mcp-args.json
+.tmp/
+.mcp.json

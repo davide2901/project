@@ -1,0 +1,50 @@
+{
+  "company_name": "Satispay",
+  "role_title": "Junior Full Stack (Stage)",
+  "position_type": "stage",
+  "ats_keywords": [
+    "React",
+    "Node.js",
+    "TypeScript",
+    "stage",
+    "API REST",
+    "Git"
+  ],
+  "matched_skills": [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "Git"
+  ],
+  "omitted_offer_requirements": [
+    "esperienza fintech specifica"
+  ],
+  "company_research": {
+    "summary": "Satispay è una fintech italiana focalizzata su pagamenti digitali e servizi per merchant e consumatori.",
+    "facts": [
+      {
+        "label": "Sede",
+        "value": "Milano / remoto",
+        "source": "https://www.satispay.com"
+      },
+      {
+        "label": "Settore",
+        "value": "Fintech / pagamenti",
+        "source": "https://www.satispay.com"
+      }
+    ],
+    "unavailable_notes": [
+      "Dettagli retributivi dello stage non reperibili dall'annuncio campione"
+    ]
+  },
+  "optimized_cv_text": "Davide Test — Junior Full Stack\n\nInteresse per stage su stack React + TypeScript + Node.js. Esperienza su web app con Next.js/Supabase e integrazione API.\nCompetenze: React, TypeScript, Node.js, Git, Tailwind CSS.\nObiettivo: crescere con mentorship su prodotto fintech.",
+  "cover_letter": "Gentile team Satispay,\n\nsono interessato allo stage Junior Full Stack. Porto basi solide di React e TypeScript e voglia di imparare su un prodotto reale, con attenzione a qualità e collaborazione.\n\nCordiali saluti,\nDavide Test",
+  "email_draft": {
+    "subject": "Candidatura Stage Junior Full Stack — Davide Test",
+    "body": "Buongiorno,\n\ninvio candidatura per lo stage Junior Full Stack.\nDisponibile a partire da subito.\n\nCordiali saluti,\nDavide Test"
+  },
+  "honesty_notes": [
+    "Nessuna esperienza fintech pregressa dichiarata",
+    "Facsimile di test: non generato live da Gemini"
+  ]
+}

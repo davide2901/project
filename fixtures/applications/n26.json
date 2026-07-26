@@ -1,0 +1,52 @@
+{
+  "company_name": "N26",
+  "role_title": "Product Designer / Frontend",
+  "position_type": "lavoro",
+  "ats_keywords": [
+    "Figma",
+    "React",
+    "design systems",
+    "accessibility",
+    "TypeScript",
+    "English"
+  ],
+  "matched_skills": [
+    "React",
+    "TypeScript",
+    "Tailwind CSS"
+  ],
+  "omitted_offer_requirements": [
+    "fluency Figma professionale non documentata nel CV testuale",
+    "esperienza design systems come designer",
+    "English required a livello professionale pieno"
+  ],
+  "company_research": {
+    "summary": "N26 è una neobank europea con sede a Berlino, nota per banking digitale e prodotto mobile-first.",
+    "facts": [
+      {
+        "label": "Sede",
+        "value": "Berlin, Germany",
+        "source": "https://n26.com"
+      },
+      {
+        "label": "Settore",
+        "value": "Neobank / fintech",
+        "source": "https://n26.com"
+      }
+    ],
+    "unavailable_notes": [
+      "Requisiti esatti della job posting originale non verificati oltre al facsimile"
+    ]
+  },
+  "optimized_cv_text": "Davide Test — Frontend / UI\n\nEsperienza UI su React e TypeScript con attenzione a layout mobile-first e sistemi di stile (Tailwind). Interesse a collaborare con design e a crescere su design systems.\nNota: il profilo attuale è più engineering-oriented che pure design.",
+  "cover_letter": "Dear N26 hiring team,\n\nI am applying for the Product Designer / Frontend role. My background is stronger on React/TypeScript UI engineering than on pure product design; I am transparent about that gap while highlighting mobile-first UI craft and willingness to deepen Figma/design-system practice.\n\nBest regards,\nDavide Test",
+  "email_draft": {
+    "subject": "Application — Product Designer / Frontend — Davide Test",
+    "body": "Hello,\n\nPlease find my CV and cover letter for the Product Designer / Frontend position.\n\nBest regards,\nDavide Test"
+  },
+  "honesty_notes": [
+    "Gap esplicito su Figma come skill primaria",
+    "Lettera in inglese perché l'offerta lo richiede",
+    "Facsimile di test"
+  ]
+}

@@ -1,0 +1,13 @@
+Bending Spoons — iOS / Frontend Engineer (Milano / hybrid)
+
+Cerchiamo una persona con esperienza in React / TypeScript (o Swift) per prodotti consumer a grande scala.
+Requisiti:
+- 2+ anni di esperienza frontend o mobile
+- TypeScript solido
+- attenzione a performance e qualità del codice
+- inglese scritto buono
+
+Nice to have: Next.js, design system, testing.
+Stage / internship: consideriamo anche profili junior motivati.
+
+Link: https://bendingspoons.com/careers

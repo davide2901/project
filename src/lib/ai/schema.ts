@@ -57,7 +57,7 @@ export const applicationPackageSchema = z.object({
 
 export type ApplicationPackage = z.infer<typeof applicationPackageSchema>;
 
-/** Schema JSON Schema (draft) per tool Anthropic / documentazione. */
+/** Schema JSON Schema per responseJsonSchema Gemini / documentazione. */
 export const applicationPackageJsonSchema = {
   type: "object",
   additionalProperties: false,

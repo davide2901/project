@@ -1,15 +1,56 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { generateApplicationFromOffer } from "@/app/actions/application";
+import { ApplicationResult } from "@/components/application/application-result";
 import type { ApplicationPackage } from "@/lib/ai/schema";
 
-export function NewApplicationForm() {
+const MOCK_OFFERS = [
+  {
+    id: "bs",
+    label: "Bending Spoons",
+    text: `Bending Spoons — Frontend Engineer (Milano / hybrid)
+
+Cerchiamo esperienza in React / TypeScript.
+Requisiti: TypeScript, performance, Next.js.
+Link: https://bendingspoons.com/careers`,
+  },
+  {
+    id: "satispay",
+    label: "Satispay stage",
+    text: `Satispay — Junior Full Stack (Stage / Tirocinio)
+
+Stage retribuito. Stack: React, Node.js, TypeScript.
+API REST e Git.`,
+  },
+  {
+    id: "n26",
+    label: "N26",
+    text: `N26 — Product Designer / Frontend (Berlin)
+
+Figma, React, TypeScript, design systems.
+English required.`,
+  },
+] as const;
+
+type Props = {
+  mockMode?: boolean;
+};
+
+export function NewApplicationForm({ mockMode = false }: Props) {
   const [offer, setOffer] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApplicationPackage | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [cvSourceLabel, setCvSourceLabel] = useState<string | null>(null);
+  const [figmaWriteLabel, setFigmaWriteLabel] = useState<string | null>(null);
+  const [figmaCvUrl, setFigmaCvUrl] = useState<string | null>(null);
+  const [figmaPortfolioUrl, setFigmaPortfolioUrl] = useState<string | null>(
+    null,
+  );
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,18 +59,51 @@ export function NewApplicationForm() {
       const res = await generateApplicationFromOffer(offer);
       if (!res.ok) {
         setResult(null);
+        setApplicationId(null);
+        setCvSourceLabel(null);
+        setFigmaWriteLabel(null);
+        setFigmaCvUrl(null);
+        setFigmaPortfolioUrl(null);
         setError(res.error);
         return;
       }
       setResult(res.data);
+      setApplicationId(res.applicationId);
+      setCvSourceLabel(res.cvSourceLabel);
+      setFigmaWriteLabel(res.figmaWriteLabel);
+      setFigmaCvUrl(res.figmaCvUrl);
+      setFigmaPortfolioUrl(res.figmaPortfolioUrl);
     });
   }
 
   return (
     <div className="space-y-8">
+      {mockMode ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
+            Offerte mock
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {MOCK_OFFERS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="btn-secondary text-sm"
+                onClick={() => {
+                  setOffer(item.text);
+                  setError(null);
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <form onSubmit={onSubmit} className="space-y-6">
         <div className="space-y-1.5">
-          <label htmlFor="offer" className="text-sm font-medium">
+          <label htmlFor="offer" className="label-caps">
             Testo o link dell&apos;offerta
           </label>
           <textarea
@@ -57,140 +131,40 @@ export function NewApplicationForm() {
 
         <button
           type="submit"
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
           disabled={pending || !offer.trim()}
         >
-          {pending ? "Generazione in corso..." : "Genera candidatura"}
+          {pending
+            ? mockMode
+              ? "Mock in corso..."
+              : "Generazione in corso..."
+            : mockMode
+              ? "Genera (mock)"
+              : "Genera candidatura"}
         </button>
       </form>
 
-      {result ? <ApplicationResult data={result} /> : null}
-    </div>
-  );
-}
-
-function ApplicationResult({ data }: { data: ApplicationPackage }) {
-  return (
-    <div className="space-y-6 animate-fade-up">
-      <header className="space-y-1 border-t border-[var(--line)] pt-6">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
-          Risultato
+      {result && applicationId ? (
+        <p className="rounded-md border border-[var(--line)] bg-[var(--tint)] px-3 py-2 text-sm text-[var(--ink)]">
+          Salvata in archivio.{" "}
+          <Link
+            href={`/archivio/${applicationId}`}
+            className="text-link"
+          >
+            Apri dettaglio
+          </Link>
         </p>
-        <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
-          {data.company_name} · {data.role_title}
-        </h2>
-        <p className="text-sm text-[var(--muted)]">
-          Tipo posizione: {labelPosition(data.position_type)}
-        </p>
-      </header>
+      ) : null}
 
-      <ResultBlock title="Keyword ATS" body={data.ats_keywords.join(" · ") || "—"} />
-      <ResultBlock
-        title="Competenze allineate (dal tuo CV)"
-        body={data.matched_skills.join(" · ") || "—"}
-      />
-      <ResultBlock
-        title="Requisiti offerta non coperti"
-        body={
-          data.omitted_offer_requirements.length
-            ? data.omitted_offer_requirements.map((r) => `• ${r}`).join("\n")
-            : "Nessuno evidenziato"
-        }
-      />
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-[var(--ink)]">Ricerca azienda</h3>
-        <p className="text-sm text-[var(--muted)]">{data.company_research.summary}</p>
-        <ul className="space-y-2 text-sm">
-          {data.company_research.facts.map((fact) => (
-            <li
-              key={`${fact.label}-${fact.value}`}
-              className="rounded-md border border-[var(--line)] bg-[var(--surface)] px-3 py-2"
-            >
-              <span className="font-medium">{fact.label}:</span> {fact.value}
-              {fact.source ? (
-                <span className="mt-1 block truncate text-xs text-[var(--muted)]">
-                  Fonte: {fact.source}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        {data.company_research.unavailable_notes.length ? (
-          <p className="text-xs text-[var(--muted)]">
-            Non reperibile: {data.company_research.unavailable_notes.join(" · ")}
-          </p>
-        ) : null}
-      </section>
-
-      <ResultBlock title="CV ottimizzato" body={data.optimized_cv_text} mono />
-      <ResultBlock title="Lettera motivazionale" body={data.cover_letter} />
-      <ResultBlock
-        title="Bozza email"
-        body={`Oggetto: ${data.email_draft.subject}\n\n${data.email_draft.body}`}
-      />
-
-      {data.honesty_notes.length ? (
-        <ResultBlock
-          title="Note di trasparenza"
-          body={data.honesty_notes.map((n) => `• ${n}`).join("\n")}
+      {result ? (
+        <ApplicationResult
+          data={result}
+          cvSourceLabel={cvSourceLabel ?? undefined}
+          figmaWriteLabel={figmaWriteLabel ?? undefined}
+          figmaCvUrl={figmaCvUrl}
+          figmaPortfolioUrl={figmaPortfolioUrl}
         />
       ) : null}
     </div>
   );
-}
-
-function ResultBlock({
-  title,
-  body,
-  mono,
-}: {
-  title: string;
-  body: string;
-  mono?: boolean;
-}) {
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--ink)]">{title}</h3>
-        <CopyButton text={body} />
-      </div>
-      <pre
-        className={`whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--ink)] ${
-          mono ? "font-[family-name:var(--font-mono)]" : ""
-        }`}
-      >
-        {body}
-      </pre>
-    </section>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <button
-      type="button"
-      className="text-xs font-medium text-[var(--accent)] underline-offset-2 hover:underline"
-      onClick={async () => {
-        await navigator.clipboard.writeText(text);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      }}
-    >
-      {copied ? "Copiato" : "Copia"}
-    </button>
-  );
-}
-
-function labelPosition(type: ApplicationPackage["position_type"]) {
-  switch (type) {
-    case "lavoro":
-      return "Lavoro";
-    case "stage":
-      return "Stage / tirocinio / internship";
-    default:
-      return "Non chiaro dall'offerta";
-  }
 }

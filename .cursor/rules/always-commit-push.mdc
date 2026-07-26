@@ -1,0 +1,14 @@
+---
+description: Sempre commit e push su git dopo modifiche rilevanti
+alwaysApply: true
+---
+
+# Git: commit + push obbligatori
+
+Dopo ogni intervento che cambia il codice del progetto (feature, fix, UI, config):
+
+1. Crea un **commit git** con messaggio chiaro (perché, non solo cosa).
+2. Fai **push** su `origin` della branch corrente (`git push -u origin HEAD` se serve).
+3. Non lasciare lavoro importante solo in working tree o solo su Vercel.
+
+Eccezioni: non committare secret (`.env.local`, token, chiavi). Se il push richiede force su `main`/`master`, avvisa e chiedi conferma esplicita prima.

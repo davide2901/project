@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
@@ -9,13 +10,23 @@ export type AuthActionState = {
   needsEmailConfirm?: boolean;
 };
 
+async function resolveSiteUrl() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
 export async function signInWithPassword(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/profilo");
+  const next = String(formData.get("next") ?? "/home");
 
   if (!email || !password) {
     return { error: "Inserisci email e password." };
@@ -28,7 +39,7 @@ export async function signInWithPassword(
     return { error: error.message };
   }
 
-  redirect(next.startsWith("/") ? next : "/profilo");
+  redirect(next.startsWith("/") ? next : "/home");
 }
 
 export async function signUpWithPassword(
@@ -47,13 +58,14 @@ export async function signUpWithPassword(
     return { error: "La password deve avere almeno 8 caratteri." };
   }
 
+  const siteUrl = await resolveSiteUrl();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName || undefined },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: `${siteUrl}/auth/callback`,
     },
   });
 
@@ -61,7 +73,6 @@ export async function signUpWithPassword(
     return { error: error.message };
   }
 
-  // Se la conferma email è disabilitata, sessione già attiva.
   if (data.session) {
     if (fullName && data.user) {
       await supabase
@@ -69,7 +80,7 @@ export async function signUpWithPassword(
         .update({ full_name: fullName })
         .eq("user_id", data.user.id);
     }
-    redirect("/profilo");
+    redirect("/home");
   }
 
   return {
@@ -78,19 +89,29 @@ export async function signUpWithPassword(
   };
 }
 
-export async function signInWithGoogle(next = "/profilo") {
+export async function signInWithGoogle(formData: FormData) {
+  const nextRaw = String(formData.get("next") ?? "/home");
+  const next = nextRaw.startsWith("/") ? nextRaw : "/home";
+  const siteUrl = await resolveSiteUrl();
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
     },
   });
 
-  if (error || !data.url) {
-    redirect("/login?error=oauth");
+  if (error) {
+    redirect(`/login?error=oauth&detail=${encodeURIComponent(error.message)}`);
+  }
+
+  if (!data.url) {
+    redirect("/login?error=oauth&detail=missing_oauth_url");
   }
 
   redirect(data.url);
