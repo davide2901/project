@@ -46,7 +46,6 @@ export function NewApplicationForm({ mockMode = false }: Props) {
   const [result, setResult] = useState<ApplicationPackage | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [cvSourceLabel, setCvSourceLabel] = useState<string | null>(null);
-  const [figmaWriteLabel, setFigmaWriteLabel] = useState<string | null>(null);
   const [figmaCvUrl, setFigmaCvUrl] = useState<string | null>(null);
   const [figmaPortfolioUrl, setFigmaPortfolioUrl] = useState<string | null>(
     null,
@@ -61,7 +60,6 @@ export function NewApplicationForm({ mockMode = false }: Props) {
         setResult(null);
         setApplicationId(null);
         setCvSourceLabel(null);
-        setFigmaWriteLabel(null);
         setFigmaCvUrl(null);
         setFigmaPortfolioUrl(null);
         setError(res.error);
@@ -70,7 +68,6 @@ export function NewApplicationForm({ mockMode = false }: Props) {
       setResult(res.data);
       setApplicationId(res.applicationId);
       setCvSourceLabel(res.cvSourceLabel);
-      setFigmaWriteLabel(res.figmaWriteLabel);
       setFigmaCvUrl(res.figmaCvUrl);
       setFigmaPortfolioUrl(res.figmaPortfolioUrl);
     });
@@ -160,7 +157,6 @@ export function NewApplicationForm({ mockMode = false }: Props) {
         <ApplicationResult
           data={result}
           cvSourceLabel={cvSourceLabel ?? undefined}
-          figmaWriteLabel={figmaWriteLabel ?? undefined}
           figmaCvUrl={figmaCvUrl}
           figmaPortfolioUrl={figmaPortfolioUrl}
         />

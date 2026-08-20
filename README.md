@@ -1,13 +1,13 @@
 # SuMisura
 
-Web app mobile-first per candidature su misura. Ogni utente vede solo i propri dati (Supabase Auth + RLS). Stack: Next.js App Router, Tailwind, Supabase, Google Gemini, Figma API (Fase 2).
+Web app mobile-first per candidature su misura. Ogni utente vede solo i propri dati (Supabase Auth + RLS). Stack: Next.js App Router, Tailwind, Supabase, Google Gemini.
 
 ## Stato sviluppo
 
 | Fase | Contenuto | Stato |
 |------|-----------|--------|
 | 1 | Setup, auth, profilo, Nuova Candidatura + Gemini | Completata |
-| 2 | Figma working copy + text nodes | Completata (scrittura se env configurate; altrimenti fallback CV) |
+| 2 | Link Figma personali + copia/incolla (multi-tenant) | Completata |
 | 3 | Archivio applications | Completata |
 | 4 | Discovery offerte dal web | Completata (Home → Offerte per te) |
 | 5 | Cron discovery giornaliero | Completata (`/api/cron/discovery`) |
@@ -62,10 +62,10 @@ Apri [http://localhost:3000](http://localhost:3000).
 ## Regole d'oro
 
 1. **Isolamento** — `public.users` è FK root; RLS su ogni tabella. Non esiste tabella `companies`.
-2. **Figma** — mai sovrascrivere il file originale. Pipeline in `src/lib/figma/safe-edit.ts`: working copy prima di qualsiasi scrittura. PDF export resta via webhook/plugin esterni.
+2. **Figma multi-tenant** — nessun token/API Figma lato server. Ogni utente salva i **propri** link nel profilo; dopo la generazione «Apri in Figma» copia CV/lettera e apre quel file. Il CV per l’AI arriva dal testo profilo / competenze.
 3. **Onestà AI** — riformulare/riordinare competenze esistenti; fatti web o “non reperibile”.
 4. **Stage** — matching include stage/tirocinio/internship secondo `job_preference`.
-5. **Fallback CV** — se Figma fallisce, `resolveCvSource` usa `profiles.cv_fallback_text`.
+5. **Fonte CV** — `resolveCvSource` usa `profiles.cv_fallback_text` (o competenze).
 
 ## Discovery (Fase 4)
 
@@ -79,14 +79,11 @@ Mock: `USE_AI_MOCK=true` usa [`fixtures/discovery/offers.json`](fixtures/discove
 
 ## Figma (Fase 2)
 
-Env richieste per **scrivere** sulla working copy:
+Nessuna variabile d’ambiente Figma. Flusso:
 
-- `FIGMA_ACCESS_TOKEN`
-- `FIGMA_DUPLICATE_WEBHOOK_URL` **oppure** `FIGMA_WORKING_COPY_FILE_KEY`
-- `FIGMA_TEXT_WRITE_WEBHOOK_URL`
-- opzionale `FIGMA_CV_TEXT_NODE_ID` (default `__cv_body__` per il plugin)
-
-Senza queste variabili la generazione resta testuale (archivio) e mostra lo stato in UI.
+1. Nel **Profilo**, ogni utente inserisce i link ai propri file CV / portfolio
+2. La generazione usa solo CV testuale / competenze
+3. Nel risultato, **Apri in Figma** copia il testo e apre il link dell’utente
 
 ## Cron (Fase 5)
 

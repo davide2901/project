@@ -48,9 +48,7 @@ export async function GET(request: Request) {
   const rows = (profiles ?? []) as Profile[];
   const eligible = rows.filter(
     (p) =>
-      p.skills.length > 0 ||
-      Boolean(p.cv_fallback_text?.trim()) ||
-      Boolean(p.figma_cv_url?.trim()),
+      p.skills.length > 0 || Boolean(p.cv_fallback_text?.trim()),
   );
 
   const summary: {

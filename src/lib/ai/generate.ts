@@ -23,7 +23,6 @@ type GenerateInput = {
     companies_of_interest: string[];
   };
   cvSourceKind?: CvSourceKind;
-  figmaError?: string;
 };
 
 function getClient() {
@@ -93,7 +92,6 @@ export async function generateApplicationPackage(
   const contents = buildUserPrompt(input.offerInput);
   const systemInstruction = buildSystemPrompt(input.profile, {
     cvSourceKind: input.cvSourceKind,
-    figmaError: input.figmaError,
   });
   const schema = applicationPackageJsonSchema as Record<string, unknown>;
 

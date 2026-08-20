@@ -11,7 +11,6 @@ type PromptProfile = {
 
 type PromptMeta = {
   cvSourceKind?: CvSourceKind;
-  figmaError?: string;
 };
 
 export function buildSystemPrompt(
@@ -26,11 +25,9 @@ export function buildSystemPrompt(
         : "Il candidato accetta sia lavoro sia stage/tirocinio/internship.";
 
   const sourceNote =
-    meta.cvSourceKind === "figma"
-      ? "Fonte CV: testo estratto da Figma (sola lettura file originale)."
-      : meta.cvSourceKind === "fallback" && meta.figmaError
-        ? `Fonte CV: FALLBACK testuale del profilo (Figma fallito: ${meta.figmaError}). Dichiaralo in honesty_notes.`
-        : "Fonte CV: testo di profilo / fallback.";
+    meta.cvSourceKind === "profile"
+      ? "Fonte CV: testo e competenze del profilo utente."
+      : "Fonte CV: testo di profilo.";
 
   return `Sei un assistente per candidature di lavoro onesto e rigoroso per l'app SuMisura.
 

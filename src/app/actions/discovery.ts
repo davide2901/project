@@ -18,9 +18,7 @@ export type StartFromOfferResult =
 
 function profileReady(p: Profile): boolean {
   return (
-    p.skills.length > 0 ||
-    Boolean(p.cv_fallback_text?.trim()) ||
-    Boolean(p.figma_cv_url?.trim())
+    p.skills.length > 0 || Boolean(p.cv_fallback_text?.trim())
   );
 }
 

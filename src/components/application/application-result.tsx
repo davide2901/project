@@ -8,13 +8,11 @@ import { labelPosition } from "@/lib/application/labels";
 export function ApplicationResult({
   data,
   cvSourceLabel,
-  figmaWriteLabel,
   figmaCvUrl,
   figmaPortfolioUrl,
 }: {
   data: ApplicationPackage;
   cvSourceLabel?: string;
-  figmaWriteLabel?: string;
   figmaCvUrl?: string | null;
   figmaPortfolioUrl?: string | null;
 }) {
@@ -28,11 +26,8 @@ export function ApplicationResult({
         <p className="text-sm text-[var(--muted)]">
           Tipo posizione: {labelPosition(data.position_type)}
         </p>
-        {cvSourceLabel || figmaWriteLabel ? (
-          <ul className="space-y-1 pt-2 text-xs text-[var(--muted)]">
-            {cvSourceLabel ? <li>{cvSourceLabel}</li> : null}
-            {figmaWriteLabel ? <li>{figmaWriteLabel}</li> : null}
-          </ul>
+        {cvSourceLabel ? (
+          <p className="pt-2 text-xs text-[var(--muted)]">{cvSourceLabel}</p>
         ) : null}
       </header>
 
@@ -141,13 +136,13 @@ function ExportActions({
       await navigator.clipboard.writeText(payload);
       setNote(
         url
-          ? "Testo copiato. Apro Figma: incolla nei text node della copia."
+          ? "Testo copiato. Apro il tuo Figma: incolla nei text node."
           : "Testo copiato. Aggiungi il link Figma nel Profilo per aprirlo da qui.",
       );
     } catch {
       setNote(
         url
-          ? "Apro Figma. Copia manualmente CV e lettera dai blocchi sotto."
+          ? "Apro il tuo Figma. Copia manualmente CV e lettera dai blocchi sotto."
           : "Aggiungi il link Figma nel Profilo, poi riprova.",
       );
     }
@@ -163,7 +158,8 @@ function ExportActions({
         Crea documenti
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Esporta subito in PDF o apri Figma con CV e lettera pronti da incollare.
+        Esporta in PDF oppure apri il tuo file Figma con CV e lettera già in
+        clipboard, pronti da incollare.
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
         <button type="button" className="btn-primary" onClick={printPdf}>

@@ -83,9 +83,7 @@ export async function loadTabsBootstrap(
 
   const profileReady = Boolean(
     profile &&
-      (profile.skills.length > 0 ||
-        profile.cv_fallback_text?.trim() ||
-        profile.figma_cv_url?.trim()),
+      (profile.skills.length > 0 || profile.cv_fallback_text?.trim()),
   );
 
   return {

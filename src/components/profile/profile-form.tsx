@@ -207,41 +207,51 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           />
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-3">
-            <label htmlFor="figma_cv_url" className="label-caps">
-              Link Figma CV
-            </label>
-            <input
-              id="figma_cv_url"
-              name="figma_cv_url"
-              type="url"
-              value={values.figma_cv_url}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, figma_cv_url: e.target.value }))
-              }
-              className="field"
-              placeholder="https://www.figma.com/..."
-            />
+        <section className="space-y-3">
+          <div className="space-y-1">
+            <p className="label-caps">Link Figma (tuoi file)</p>
+            <p className="text-sm text-[var(--muted)]">
+              Ogni utente usa i propri file. Dopo la generazione, «Apri in Figma»
+              copia CV e lettera e apre questi link — nessuna sincronizzazione
+              automatica con un account condiviso.
+            </p>
           </div>
-          <div className="space-y-3">
-            <label htmlFor="figma_portfolio_url" className="label-caps">
-              Link Figma Portfolio
-            </label>
-            <input
-              id="figma_portfolio_url"
-              name="figma_portfolio_url"
-              type="url"
-              value={values.figma_portfolio_url}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  figma_portfolio_url: e.target.value,
-                }))
-              }
-              className="field"
-              placeholder="https://www.figma.com/..."
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-3">
+              <label htmlFor="figma_cv_url" className="label-caps">
+                Link Figma CV
+              </label>
+              <input
+                id="figma_cv_url"
+                name="figma_cv_url"
+                type="url"
+                value={values.figma_cv_url}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, figma_cv_url: e.target.value }))
+                }
+                className="field"
+                placeholder="https://www.figma.com/..."
+              />
+            </div>
+            <div className="space-y-3">
+              <label htmlFor="figma_portfolio_url" className="label-caps">
+                Link Figma Portfolio
+              </label>
+              <input
+                id="figma_portfolio_url"
+                name="figma_portfolio_url"
+                type="url"
+                value={values.figma_portfolio_url}
+                onChange={(e) =>
+                  setValues((v) => ({
+                    ...v,
+                    figma_portfolio_url: e.target.value,
+                  }))
+                }
+                className="field"
+                placeholder="https://www.figma.com/..."
+              />
+            </div>
           </div>
         </section>
 

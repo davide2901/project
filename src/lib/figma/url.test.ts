@@ -2,11 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { applyPreferenceFilter } from "@/lib/application/preference";
 import type { ApplicationPackage } from "@/lib/ai/schema";
-import {
-  applyTextUpdatesToWorkingCopy,
-  createWorkingCopy,
-  FigmaOriginalGuardError,
-} from "@/lib/figma/safe-edit";
 import { parseFigmaUrl } from "@/lib/figma/url";
 
 const basePkg = (position_type: ApplicationPackage["position_type"]): ApplicationPackage => ({
@@ -30,33 +25,6 @@ describe("parseFigmaUrl", () => {
     );
     expect(parsed?.fileKey).toBe("AbCdEf123");
     expect(parsed?.nodeId).toBe("12:34");
-  });
-});
-
-describe("Figma original guard", () => {
-  it("rifiuta working copy uguale all'originale", async () => {
-    const prev = process.env.FIGMA_WORKING_COPY_FILE_KEY;
-    process.env.FIGMA_WORKING_COPY_FILE_KEY = "SAME_KEY";
-    delete process.env.FIGMA_DUPLICATE_WEBHOOK_URL;
-
-    await expect(createWorkingCopy("SAME_KEY")).rejects.toBeInstanceOf(
-      FigmaOriginalGuardError,
-    );
-
-    process.env.FIGMA_WORKING_COPY_FILE_KEY = prev;
-  });
-
-  it("blocca scrittura se fileKey === originalFileKey", async () => {
-    await expect(
-      applyTextUpdatesToWorkingCopy(
-        {
-          fileKey: "ORIG",
-          originalFileKey: "ORIG",
-          strategy: "provisioned_working_copy",
-        },
-        [{ nodeId: "1:1", characters: "hack" }],
-      ),
-    ).rejects.toBeInstanceOf(FigmaOriginalGuardError);
   });
 });
 
