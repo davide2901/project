@@ -37,15 +37,21 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isPublicApi =
+    pathname.startsWith("/api/figma/plugin/") ||
+    pathname.startsWith("/api/figma/callback") ||
+    pathname.startsWith("/api/cron/");
   const isPublicRoute =
     pathname === "/" ||
     isAuthRoute ||
-    pathname.startsWith("/auth/callback");
+    pathname.startsWith("/auth/callback") ||
+    isPublicApi;
 
   if (!userId && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    // Conserva query (es. code OAuth) oltre al path
+    url.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 
