@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { queueFigmaExport } from "@/app/actions/figma";
 import { generateApplicationPackage } from "@/lib/ai/generate";
 import type { ApplicationPackage } from "@/lib/ai/schema";
 import { applyPreferenceFilter } from "@/lib/application/preference";
@@ -17,6 +18,7 @@ export type GenerateApplicationResult =
       cvSourceLabel: string;
       figmaCvUrl: string | null;
       figmaPortfolioUrl: string | null;
+      figmaSyncCode: string | null;
     }
   | { ok: false; error: string };
 
@@ -132,6 +134,21 @@ export async function generateApplicationFromOffer(
   }
 
   revalidatePath("/archivio");
+
+  let figmaSyncCode: string | null = null;
+  if (p.figma_cv_url?.trim()) {
+    const queued = await queueFigmaExport({
+      applicationId: row.id as string,
+      companyName: data.company_name,
+      roleTitle: data.role_title,
+      optimizedCvText: data.optimized_cv_text,
+      coverLetter: data.cover_letter,
+    });
+    if (queued.ok) {
+      figmaSyncCode = queued.syncCode;
+    }
+  }
+
   return {
     ok: true,
     data,
@@ -139,6 +156,7 @@ export async function generateApplicationFromOffer(
     cvSourceLabel,
     figmaCvUrl: p.figma_cv_url?.trim() || null,
     figmaPortfolioUrl: p.figma_portfolio_url?.trim() || null,
+    figmaSyncCode,
   };
 }
 

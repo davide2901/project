@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font: 12px/1.4 Inter, system-ui, sans-serif;
+        margin: 16px;
+        color: #1e1e1e;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 10px;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        border: 0;
+        border-radius: 8px;
+        background: #0b1f36;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .hint {
+        color: #667;
+        margin: 0 0 12px;
+      }
+      .status {
+        margin-top: 12px;
+        white-space: pre-wrap;
+      }
+      .err {
+        color: #b00020;
+      }
+      .ok {
+        color: #0a7a3e;
+      }
+    </style>
+  </head>
+  <body>
+    <p class="hint">
+      Incolla il codice sync da SuMisura (es. SM-A1B2C3D4). Serve un text node
+      selezionato oppure chiamato <code>__cv_body__</code>.
+    </p>
+    <label for="api">URL API SuMisura</label>
+    <input
+      id="api"
+      type="url"
+      placeholder="https://sumisura-eight.vercel.app"
+      value="https://sumisura-eight.vercel.app"
+    />
+    <label for="code">Codice sync</label>
+    <input id="code" type="text" placeholder="SM-XXXXXXXX" autocomplete="off" />
+    <button id="go">Importa e applica</button>
+    <p id="status" class="status"></p>
+    <script>
+      const statusEl = document.getElementById("status");
+      const go = document.getElementById("go");
+
+      go.onclick = async () => {
+        const base = document.getElementById("api").value.replace(/\/$/, "");
+        const code = document.getElementById("code").value.trim();
+        if (!base || !code) {
+          statusEl.className = "status err";
+          statusEl.textContent = "Inserisci URL e codice.";
+          return;
+        }
+        go.disabled = true;
+        statusEl.className = "status";
+        statusEl.textContent = "Scarico…";
+        try {
+          const res = await fetch(
+            base + "/api/figma/plugin/pull?code=" + encodeURIComponent(code),
+          );
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Pull fallito");
+          }
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "apply",
+                nodeName: data.node_name || "__cv_body__",
+                cvText: data.cv_text || "",
+                coverLetter: data.cover_letter || "",
+              },
+            },
+            "*",
+          );
+        } catch (err) {
+          statusEl.className = "status err";
+          statusEl.textContent = err.message || String(err);
+          go.disabled = false;
+        }
+      };
+
+      onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg) return;
+        go.disabled = false;
+        if (msg.type === "ok") {
+          statusEl.className = "status ok";
+          statusEl.textContent = msg.message;
+        }
+        if (msg.type === "error") {
+          statusEl.className = "status err";
+          statusEl.textContent = msg.message;
+        }
+      };
+    </script>
+  </body>
+</html>

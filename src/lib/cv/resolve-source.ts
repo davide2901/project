@@ -1,8 +1,8 @@
 /**
  * Risolve il materiale CV da usare per la generazione.
  *
- * Fonte unica multi-tenant: testo profilo / competenze.
- * I link Figma restano nel profilo solo per «Apri in Figma» (copia/incolla lato client).
+ * Fonte: testo profilo / competenze (anche dopo «Importa CV da Figma»).
+ * I link Figma + OAuth servono all'import; l'export usa plugin + sync code.
  */
 
 import type { JobPreference } from "@/lib/types/database";

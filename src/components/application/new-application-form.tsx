@@ -50,6 +50,7 @@ export function NewApplicationForm({ mockMode = false }: Props) {
   const [figmaPortfolioUrl, setFigmaPortfolioUrl] = useState<string | null>(
     null,
   );
+  const [figmaSyncCode, setFigmaSyncCode] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +63,7 @@ export function NewApplicationForm({ mockMode = false }: Props) {
         setCvSourceLabel(null);
         setFigmaCvUrl(null);
         setFigmaPortfolioUrl(null);
+        setFigmaSyncCode(null);
         setError(res.error);
         return;
       }
@@ -70,6 +72,7 @@ export function NewApplicationForm({ mockMode = false }: Props) {
       setCvSourceLabel(res.cvSourceLabel);
       setFigmaCvUrl(res.figmaCvUrl);
       setFigmaPortfolioUrl(res.figmaPortfolioUrl);
+      setFigmaSyncCode(res.figmaSyncCode);
     });
   }
 
@@ -159,6 +162,7 @@ export function NewApplicationForm({ mockMode = false }: Props) {
           cvSourceLabel={cvSourceLabel ?? undefined}
           figmaCvUrl={figmaCvUrl}
           figmaPortfolioUrl={figmaPortfolioUrl}
+          figmaSyncCode={figmaSyncCode}
         />
       ) : null}
     </div>

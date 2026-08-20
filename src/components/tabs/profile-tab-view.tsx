@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { ProfileForm } from "@/components/profile/profile-form";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
@@ -22,7 +23,8 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
       <div className="space-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl">Profilo</h1>
         <p className="text-sm text-[var(--muted)]">
-          Nessun profilo trovato. Verifica la migration SQL su Supabase.
+          Nessun profilo trovato. Verifica la migration SQL su Supabase
+          (inclusa 006_figma_oauth.sql).
         </p>
       </div>
     );
@@ -36,16 +38,19 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
         </h1>
         <p className="max-w-prose text-sm text-[var(--muted)]">
           Raccontaci chi sei e cosa stai cercando. Poi{" "}
-          <Link
-            href="/candidatura/nuova"
-            className="text-link"
-          >
+          <Link href="/candidatura/nuova" className="text-link">
             nuova candidatura
           </Link>
           .
         </p>
       </header>
-      <ProfileForm profile={data.profile} />
+      <Suspense fallback={null}>
+        <ProfileForm
+          profile={data.profile}
+          figmaOAuthConfigured={data.figmaOAuthConfigured}
+          figmaStatus={data.figmaStatus}
+        />
+      </Suspense>
     </div>
   );
 }

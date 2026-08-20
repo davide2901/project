@@ -10,11 +10,13 @@ export function ApplicationResult({
   cvSourceLabel,
   figmaCvUrl,
   figmaPortfolioUrl,
+  figmaSyncCode,
 }: {
   data: ApplicationPackage;
   cvSourceLabel?: string;
   figmaCvUrl?: string | null;
   figmaPortfolioUrl?: string | null;
+  figmaSyncCode?: string | null;
 }) {
   return (
     <div className="space-y-6 animate-fade-up">
@@ -35,6 +37,7 @@ export function ApplicationResult({
         data={data}
         figmaCvUrl={figmaCvUrl ?? null}
         figmaPortfolioUrl={figmaPortfolioUrl ?? null}
+        figmaSyncCode={figmaSyncCode ?? null}
       />
 
       <ResultBlock title="Keyword ATS" body={data.ats_keywords.join(" · ") || "—"} />
@@ -97,10 +100,12 @@ function ExportActions({
   data,
   figmaCvUrl,
   figmaPortfolioUrl,
+  figmaSyncCode,
 }: {
   data: ApplicationPackage;
   figmaCvUrl: string | null;
   figmaPortfolioUrl: string | null;
+  figmaSyncCode: string | null;
 }) {
   const [note, setNote] = useState<string | null>(null);
 
@@ -136,7 +141,7 @@ function ExportActions({
       await navigator.clipboard.writeText(payload);
       setNote(
         url
-          ? "Testo copiato. Apro il tuo Figma: incolla nei text node."
+          ? "Testo copiato. Apro il tuo Figma: incolla oppure usa il plugin con il codice sync."
           : "Testo copiato. Aggiungi il link Figma nel Profilo per aprirlo da qui.",
       );
     } catch {
@@ -152,23 +157,46 @@ function ExportActions({
     }
   }
 
+  async function copySyncCode() {
+    if (!figmaSyncCode) return;
+    try {
+      await navigator.clipboard.writeText(figmaSyncCode);
+      setNote(
+        "Codice sync copiato. Nel plugin SuMisura: incolla il codice → Importa nel text node __cv_body__ (o nella selezione).",
+      );
+    } catch {
+      setNote(`Codice sync: ${figmaSyncCode}`);
+    }
+  }
+
   return (
     <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
       <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
         Crea documenti
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Esporta in PDF oppure apri il tuo file Figma con CV e lettera già in
-        clipboard, pronti da incollare.
+        PDF, copia/incolla, oppure sync automatico via plugin Figma (codice monouso).
       </p>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <button type="button" className="btn-primary" onClick={printPdf}>
           Crea PDF
         </button>
         <button type="button" className="btn-secondary" onClick={openFigma}>
           Apri in Figma
         </button>
+        {figmaSyncCode ? (
+          <button type="button" className="btn-secondary" onClick={copySyncCode}>
+            Copia codice plugin ({figmaSyncCode})
+          </button>
+        ) : null}
       </div>
+      {figmaSyncCode ? (
+        <p className="text-xs text-[var(--muted)]">
+          Plugin: apri il file CV → Plugins → SuMisura → incolla{" "}
+          <code className="font-[family-name:var(--font-mono)]">{figmaSyncCode}</code>
+          . Scade tra ~1 ora.
+        </p>
+      ) : null}
       {note ? (
         <p className="text-xs text-[var(--muted)]" role="status">
           {note}

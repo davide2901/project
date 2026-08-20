@@ -18,7 +18,17 @@ const emptyBootstrap: TabsBootstrap = {
   home: { count: 0, firstName: null, profileReady: false, offers: [] },
   archivio: { items: [], error: null },
   statistiche: { total: 0, lavoro: 0, stage: 0 },
-  profilo: { profile: null, error: null },
+  profilo: {
+    profile: null,
+    error: null,
+    figmaOAuthConfigured: false,
+    figmaStatus: {
+      connected: false,
+      figma_handle: null,
+      figma_email: null,
+      connected_at: null,
+    },
+  },
 };
 
 export default async function AppLayout({

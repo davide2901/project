@@ -1,0 +1,12 @@
+{
+  "name": "SuMisura",
+  "id": "sumisura-cv-sync",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "Scarica CV/lettera dall'API SuMisura con il codice sync monouso."
+  }
+}

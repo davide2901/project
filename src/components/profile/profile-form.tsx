@@ -7,8 +7,13 @@ import {
   type ProfileActionState,
 } from "@/app/actions/profile";
 import { CvUpload } from "@/components/profile/cv-upload";
+import { FigmaConnectPanel } from "@/components/profile/figma-connect-panel";
 import type { CvExtract } from "@/lib/ai/cv-extract-schema";
-import type { JobPreference, Profile } from "@/lib/types/database";
+import type {
+  FigmaConnectionStatus,
+  JobPreference,
+  Profile,
+} from "@/lib/types/database";
 
 const initial: ProfileActionState = { error: null, success: false };
 
@@ -20,6 +25,8 @@ const PREFERENCES: { value: JobPreference; label: string }[] = [
 
 type ProfileFormProps = {
   profile: Profile;
+  figmaOAuthConfigured: boolean;
+  figmaStatus: FigmaConnectionStatus;
 };
 
 type FormValues = {
@@ -56,7 +63,11 @@ function sameValues(a: FormValues, b: FormValues): boolean {
   );
 }
 
-export function ProfileForm({ profile }: ProfileFormProps) {
+export function ProfileForm({
+  profile,
+  figmaOAuthConfigured,
+  figmaStatus,
+}: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfile, initial);
   const [values, setValues] = useState<FormValues>(() => fromProfile(profile));
   const [saved, setSaved] = useState<FormValues>(() => fromProfile(profile));
@@ -94,6 +105,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   return (
     <div className="space-y-8">
       <CvUpload onExtracted={onExtracted} />
+
+      <FigmaConnectPanel
+        oauthConfigured={figmaOAuthConfigured}
+        status={figmaStatus}
+        hasFigmaCvUrl={Boolean(values.figma_cv_url.trim())}
+        onExtracted={onExtracted}
+      />
 
       <form action={action} className="space-y-8">
         <section className="space-y-3">

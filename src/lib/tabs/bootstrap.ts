@@ -1,8 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getFigmaConnectionStatus } from "@/lib/figma/connection";
+import { isFigmaOAuthConfigured } from "@/lib/figma/oauth";
 import type {
   ApplicationListItem,
   DiscoveredOffer,
+  FigmaConnectionStatus,
   Profile,
 } from "@/lib/types/database";
 
@@ -27,6 +30,8 @@ export type TabsBootstrap = {
   profilo: {
     profile: Profile | null;
     error: string | null;
+    figmaOAuthConfigured: boolean;
+    figmaStatus: FigmaConnectionStatus;
   };
 };
 
@@ -80,6 +85,7 @@ export async function loadTabsBootstrap(
   const profile = (profileRes.data as Profile | null) ?? null;
   const apps = (appsRes.data ?? []) as ApplicationListItem[];
   const offers = (offersRes.data ?? []) as DiscoveredOffer[];
+  const figmaStatus = await getFigmaConnectionStatus(userId);
 
   const profileReady = Boolean(
     profile &&
@@ -105,6 +111,8 @@ export async function loadTabsBootstrap(
     profilo: {
       profile,
       error: profileRes.error?.message ?? null,
+      figmaOAuthConfigured: isFigmaOAuthConfigured(),
+      figmaStatus,
     },
   };
 }

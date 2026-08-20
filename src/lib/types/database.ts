@@ -6,6 +6,37 @@ export type ApplicationStatus = "draft" | "ready" | "sent" | "archived";
 
 export type ApplicationPositionType = ApplicationPackage["position_type"];
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type FigmaConnectionStatus = {
+  connected: boolean;
+  figma_handle: string | null;
+  figma_email: string | null;
+  connected_at: string | null;
+};
+
+export type FigmaExportJobStatus = "pending" | "consumed" | "expired";
+
+export type FigmaExportJob = {
+  id: string;
+  user_id: string;
+  application_id: string | null;
+  file_key: string | null;
+  node_name: string;
+  payload: Json;
+  sync_code: string;
+  status: FigmaExportJobStatus;
+  expires_at: string;
+  consumed_at: string | null;
+  created_at: string;
+};
+
 export type Profile = {
   id: string;
   user_id: string;
@@ -73,14 +104,6 @@ export type DiscoveredOffer = {
   created_at: string;
   updated_at: string;
 };
-
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
 
 export type Database = {
   public: {
@@ -221,6 +244,72 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      figma_connections: {
+        Row: {
+          user_id: string;
+          access_token: string;
+          refresh_token: string | null;
+          expires_at: string | null;
+          figma_user_id: string | null;
+          figma_email: string | null;
+          figma_handle: string | null;
+          connected_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          access_token: string;
+          refresh_token?: string | null;
+          expires_at?: string | null;
+          figma_user_id?: string | null;
+          figma_email?: string | null;
+          figma_handle?: string | null;
+          connected_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          access_token?: string;
+          refresh_token?: string | null;
+          expires_at?: string | null;
+          figma_user_id?: string | null;
+          figma_email?: string | null;
+          figma_handle?: string | null;
+          connected_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      figma_export_jobs: {
+        Row: FigmaExportJob;
+        Insert: {
+          id?: string;
+          user_id: string;
+          application_id?: string | null;
+          file_key?: string | null;
+          node_name?: string;
+          payload: Json;
+          sync_code: string;
+          status?: FigmaExportJobStatus;
+          expires_at: string;
+          consumed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          application_id?: string | null;
+          file_key?: string | null;
+          node_name?: string;
+          payload?: Json;
+          sync_code?: string;
+          status?: FigmaExportJobStatus;
+          expires_at?: string;
+          consumed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

@@ -95,6 +95,32 @@ export type ExtractCvInput = {
   fileName: string;
 };
 
+/** Estrae profilo strutturato da testo già letto (es. text node Figma). */
+export async function extractCvFromText(rawText: string): Promise<CvExtract> {
+  const cleaned = rawText.replace(/\s+\n/g, "\n").trim();
+  if (cleaned.length < 40) {
+    throw new Error("Testo CV troppo corto per l'estrazione.");
+  }
+
+  if (isAiMockEnabled()) {
+    return mockExtract("figma-import");
+  }
+
+  const ai = getClient();
+  const schema = cvExtractJsonSchema as unknown as Record<string, unknown>;
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: `Analizza questo testo estratto da un CV (Figma o altro) e compila lo schema JSON.\n\n---\n${cleaned.slice(0, 60000)}`,
+    config: {
+      systemInstruction: SYSTEM,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseJsonSchema: schema,
+    },
+  });
+  return parseExtract(response.text ?? "");
+}
+
 export async function extractCvFromDocument(
   input: ExtractCvInput,
 ): Promise<CvExtract> {

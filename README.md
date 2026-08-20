@@ -7,7 +7,7 @@ Web app mobile-first per candidature su misura. Ogni utente vede solo i propri d
 | Fase | Contenuto | Stato |
 |------|-----------|--------|
 | 1 | Setup, auth, profilo, Nuova Candidatura + Gemini | Completata |
-| 2 | Link Figma personali + copia/incolla (multi-tenant) | Completata |
+| 2 | Figma OAuth import + plugin export (multi-tenant) | Completata |
 | 3 | Archivio applications | Completata |
 | 4 | Discovery offerte dal web | Completata (Home → Offerte per te) |
 | 5 | Cron discovery giornaliero | Completata (`/api/cron/discovery`) |
@@ -32,6 +32,7 @@ Nel SQL Editor del progetto Supabase esegui in ordine:
 3. [`supabase/migrations/003_rls_hardening.sql`](supabase/migrations/003_rls_hardening.sql)
 4. [`supabase/migrations/004_security_advisor_fixes.sql`](supabase/migrations/004_security_advisor_fixes.sql)
 5. [`supabase/migrations/005_discovered_offers.sql`](supabase/migrations/005_discovered_offers.sql)
+6. [`supabase/migrations/006_figma_oauth.sql`](supabase/migrations/006_figma_oauth.sql)
 
 Attiva **Email/Password** e (opzionale) **Google** in Authentication → Providers.
 
@@ -62,10 +63,10 @@ Apri [http://localhost:3000](http://localhost:3000).
 ## Regole d'oro
 
 1. **Isolamento** — `public.users` è FK root; RLS su ogni tabella. Non esiste tabella `companies`.
-2. **Figma multi-tenant** — nessun token/API Figma lato server. Ogni utente salva i **propri** link nel profilo; dopo la generazione «Apri in Figma» copia CV/lettera e apre quel file. Il CV per l’AI arriva dal testo profilo / competenze.
+2. **Figma multi-tenant** — OAuth **per utente** per importare il CV dal proprio file; export via plugin + codice sync (l’API REST non scrive text node). Link Figma restano nel profilo.
 3. **Onestà AI** — riformulare/riordinare competenze esistenti; fatti web o “non reperibile”.
 4. **Stage** — matching include stage/tirocinio/internship secondo `job_preference`.
-5. **Fonte CV** — `resolveCvSource` usa `profiles.cv_fallback_text` (o competenze).
+5. **Fonte CV** — `resolveCvSource` usa `profiles.cv_fallback_text` (o competenze), anche dopo import da Figma.
 
 ## Discovery (Fase 4)
 
@@ -79,11 +80,23 @@ Mock: `USE_AI_MOCK=true` usa [`fixtures/discovery/offers.json`](fixtures/discove
 
 ## Figma (Fase 2)
 
-Nessuna variabile d’ambiente Figma. Flusso:
+### Import (lettura)
 
-1. Nel **Profilo**, ogni utente inserisce i link ai propri file CV / portfolio
-2. La generazione usa solo CV testuale / competenze
-3. Nel risultato, **Apri in Figma** copia il testo e apre il link dell’utente
+1. Esegui migration [`006_figma_oauth.sql`](supabase/migrations/006_figma_oauth.sql)
+2. Crea OAuth app su [figma.com/developers/apps](https://www.figma.com/developers/apps) con scopes `file_content:read`, `current_user:read`
+3. Imposta `FIGMA_CLIENT_ID`, `FIGMA_CLIENT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
+4. Redirect URI: `{NEXT_PUBLIC_SITE_URL}/api/figma/callback`
+5. Nel **Profilo**: Collega Figma → salva Link Figma CV → **Importa CV da Figma**
+
+### Export (scrittura)
+
+L’API non scrive text node. Dopo Genera:
+
+1. Copia il **codice sync** (es. `SM-…`)
+2. Installa il plugin in [`figma-plugin/`](figma-plugin/) (Import manifest in Figma Desktop)
+3. Nel file: text node `__cv_body__` (o selezione) → plugin → incolla codice
+
+Resta disponibile anche «Apri in Figma» (clipboard).
 
 ## Cron (Fase 5)
 
