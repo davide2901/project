@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { DiscoveredOfferItem } from "@/lib/ai/discovery-schema";
 import {
   buildDiscoveryAngles,
+  filterNovelOffers,
   mergeDiscoveryOffers,
 } from "@/lib/discovery/multi-search";
 
@@ -53,5 +54,16 @@ describe("mergeDiscoveryOffers", () => {
     ]);
     expect(merged).toHaveLength(2);
     expect(merged.map((o) => o.company_name)).toEqual(["Reply", "Acme"]);
+  });
+});
+
+describe("filterNovelOffers", () => {
+  it("drops offers already seen by the user", () => {
+    const novel = filterNovelOffers(
+      [offer("Reply", "Engineer"), offer("NewCo", "Analyst")],
+      [{ company_name: "Reply", role_title: "Engineer", source_url: null }],
+    );
+    expect(novel).toHaveLength(1);
+    expect(novel[0]?.company_name).toBe("NewCo");
   });
 });

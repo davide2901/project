@@ -15,9 +15,12 @@ import {
   DISCOVERY_ERROR_FALLBACK,
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
+import type { SeenOfferRef } from "@/lib/ai/discovery-prompts";
 import {
   buildDiscoveryAngles,
   DISCOVERY_OFFER_CAP,
+  DISCOVERY_REFRESH_MIN_NEW,
+  filterNovelOffers,
   mergeDiscoveryOffers,
   type DiscoveryAngle,
 } from "@/lib/discovery/multi-search";
@@ -37,11 +40,15 @@ export type DiscoveryProfileInput = {
   cv_fallback_text: string | null;
   job_preference: JobPreference;
   companies_of_interest: string[];
+  /** Offerte già in archivio (qualsiasi status): da scartare e sostituire. */
+  seen_offers?: SeenOfferRef[];
 };
 
 export type DiscoverOptions = {
   /** `interactive` = ricerche parallele grounded; `full` = note + JSON (cron). */
   mode?: "interactive" | "full";
+  /** Secondo giro con angoli «alternative» se poche novità. */
+  allowRefresh?: boolean;
 };
 
 function logDiscovery(
@@ -266,19 +273,21 @@ async function discoverAngleGrounded(
   profile: DiscoveryProfileInput,
   angle: DiscoveryAngle,
 ): Promise<DiscoveryResult> {
+  const seen = profile.seen_offers ?? [];
   const systemInstruction = `${buildDiscoverySystemPrompt(profile)}
 
 Focus di questa ricerca: ${angle.focus}.
-Usa la ricerca web. Restituisci SOLO JSON con "offers" (max ${OFFERS_PER_ANGLE}) e "search_notes".`;
+Usa la ricerca web. Restituisci SOLO JSON con "offers" (max ${OFFERS_PER_ANGLE}) e "search_notes".
+Scarta qualsiasi offerta già nella lista «già trovate».`;
 
-  const contents = `${buildDiscoveryUserPrompt(profile)}
+  const contents = `${buildDiscoveryUserPrompt(profile, seen)}
 
 ANGOLO DI RICERCA: ${angle.label}
 ${angle.focus}
 
 Dopo la ricerca, restituisci SOLO JSON:
 {"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":null,"snippet":"...","match_reason":"..."}],"search_notes":["..."]}
-Massimo ${OFFERS_PER_ANGLE} offerte per questo angolo.`;
+Massimo ${OFFERS_PER_ANGLE} offerte NUOVE per questo angolo.`;
 
   const t0 = Date.now();
   const response = await ai.models.generateContent({
@@ -314,10 +323,13 @@ Massimo ${OFFERS_PER_ANGLE} offerte per questo angolo.`;
 async function discoverInteractiveMultiSearch(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
+  opts: { refresh?: boolean } = {},
 ): Promise<DiscoveryResult> {
-  const angles = buildDiscoveryAngles(profile);
+  const angles = buildDiscoveryAngles(profile, { refresh: opts.refresh });
   logDiscovery("multi_start", {
     angles: angles.map((a) => a.id),
+    refresh: Boolean(opts.refresh),
+    seen: profile.seen_offers?.length ?? 0,
   });
 
   const settled = await Promise.allSettled(
@@ -367,9 +379,9 @@ async function discoverInteractiveMultiSearch(
     const schema = discoveryResultJsonSchema as Record<string, unknown>;
     const result = await generateDiscoveryJson(
       ai,
-      `${buildDiscoveryUserPrompt(profile)}
+      `${buildDiscoveryUserPrompt(profile, profile.seen_offers ?? [])}
 
-Nota: ricerca web non disponibile (quota o errore). Restituisci solo offerte di cui sei molto sicuro, senza inventare URL; preferisci offers: [] se non sei sicuro.`,
+Nota: ricerca web non disponibile (quota o errore). Restituisci solo offerte di cui sei molto sicuro, senza inventare URL; preferisci offers: [] se non sei sicuro. Non ripetere offerte già trovate.`,
       systemInstruction,
       schema,
     );
@@ -425,7 +437,7 @@ async function discoverFullTwoStep(
   }
 
   const searchNotes = noteParts.length > 0 ? noteParts.join("\n\n---\n\n") : null;
-  const basePrompt = buildDiscoveryUserPrompt(profile);
+  const basePrompt = buildDiscoveryUserPrompt(profile, profile.seen_offers ?? []);
   const contents = searchNotes
     ? `${basePrompt}
 
@@ -433,7 +445,7 @@ async function discoverFullTwoStep(
 NOTE DALLA RICERCA WEB (fonte primaria; non inventare offerte assenti da qui):
 ${searchNotes}
 ---
-Restituisci fino a ${DISCOVERY_OFFER_CAP} offerte uniche.`
+Restituisci fino a ${DISCOVERY_OFFER_CAP} offerte uniche e NON già nella lista «già trovate».`
     : `${basePrompt}
 
 Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spiega in search_notes, oppure solo offerte di cui sei molto sicuro senza inventare URL.`;
@@ -466,19 +478,25 @@ export async function discoverOffersForProfile(
   options: DiscoverOptions = {},
 ): Promise<DiscoveryResult> {
   const mode = options.mode ?? "interactive";
+  const allowRefresh = options.allowRefresh ?? mode === "interactive";
   const t0 = Date.now();
+  const seen = profile.seen_offers ?? [];
   logDiscovery("start", {
     mode,
     skills: profile.skills.length,
     pref: profile.job_preference,
+    seen: seen.length,
   });
 
   if (isAiMockEnabled()) {
     const mocked = await mockDiscoverOffers();
     return {
       ...mocked,
-      offers: mocked.offers.filter((o) =>
-        preferenceAllows(o.position_type, profile.job_preference),
+      offers: filterNovelOffers(
+        mocked.offers.filter((o) =>
+          preferenceAllows(o.position_type, profile.job_preference),
+        ),
+        seen,
       ),
     };
   }
@@ -502,16 +520,81 @@ export async function discoverOffersForProfile(
       result = await discoverFullTwoStep(ai, profile);
     }
 
+    let offers = filterNovelOffers(
+      result.offers.filter((o) =>
+        preferenceAllows(o.position_type, profile.job_preference),
+      ),
+      seen,
+    );
+    const notes = [...(result.search_notes ?? [])];
+    const skippedFirst = result.offers.length - offers.length;
+    if (skippedFirst > 0) {
+      notes.push(`Scartate ${skippedFirst} offerte già viste al primo giro.`);
+    }
+
+    if (allowRefresh && offers.length < DISCOVERY_REFRESH_MIN_NEW) {
+      const expandedSeen: SeenOfferRef[] = [
+        ...seen,
+        ...offers.map((o) => ({
+          company_name: o.company_name,
+          role_title: o.role_title,
+        })),
+        ...result.offers.map((o) => ({
+          company_name: o.company_name,
+          role_title: o.role_title,
+        })),
+      ];
+      logDiscovery("refresh_start", {
+        novelSoFar: offers.length,
+        seen: expandedSeen.length,
+      });
+      try {
+        const refreshProfile = { ...profile, seen_offers: expandedSeen };
+        const refresh =
+          mode === "interactive"
+            ? await discoverInteractiveMultiSearch(ai, refreshProfile, {
+                refresh: true,
+              })
+            : await discoverFullTwoStep(ai, refreshProfile);
+        const more = filterNovelOffers(
+          refresh.offers.filter((o) =>
+            preferenceAllows(o.position_type, profile.job_preference),
+          ),
+          [
+            ...expandedSeen.map((o) => ({ ...o, source_url: null as string | null })),
+            ...offers,
+          ],
+        );
+        if (more.length > 0) {
+          notes.push(
+            `Secondo giro alternative: +${more.length} offerte nuove.`,
+          );
+          offers = filterNovelOffers([...offers, ...more], seen);
+        } else {
+          notes.push(
+            "Secondo giro alternative: nessuna offerta nuova aggiuntiva.",
+          );
+        }
+        notes.push(...(refresh.search_notes ?? []).slice(0, 2));
+      } catch (err) {
+        logDiscovery("refresh_fail", {
+          error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+          quota: isQuotaError(err),
+        });
+        if (isQuotaError(err) && offers.length === 0) throw err;
+        notes.push("Secondo giro di ricerca non riuscito.");
+      }
+    }
+
     const filtered = {
-      ...result,
-      offers: result.offers
-        .filter((o) => preferenceAllows(o.position_type, profile.job_preference))
-        .slice(0, DISCOVERY_OFFER_CAP),
+      offers: offers.slice(0, DISCOVERY_OFFER_CAP),
+      search_notes: notes,
     };
     logDiscovery("done", {
       mode,
       ms: Date.now() - t0,
       offers: filtered.offers.length,
+      skipped: skippedFirst,
     });
     return filtered;
   } catch (err) {

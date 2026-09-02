@@ -13,7 +13,13 @@ import { createClient } from "@/lib/supabase/server";
 import type { DiscoveredOffer, Profile } from "@/lib/types/database";
 
 export type RunDiscoveryResult =
-  | { ok: true; inserted: number; notes: string[]; removedDuplicates: number }
+  | {
+      ok: true;
+      inserted: number;
+      skipped: number;
+      notes: string[];
+      removedDuplicates: number;
+    }
   | { ok: false; error: string };
 
 export type StartFromOfferResult =
@@ -105,6 +111,16 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
 
   const removedDuplicates = await dismissExistingDuplicates(supabase, user.id);
 
+  const { data: history } = await supabase
+    .from("discovered_offers")
+    .select("company_name, role_title, source_url")
+    .eq("user_id", user.id);
+
+  const existingRows = (history ?? []) as Pick<
+    DiscoveredOffer,
+    "company_name" | "role_title" | "source_url"
+  >[];
+
   let result;
   try {
     console.info(
@@ -112,6 +128,7 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
         scope: "discovery",
         stage: "runDiscovery_start",
         userId: user.id,
+        seen: existingRows.length,
         t: Date.now(),
       }),
     );
@@ -122,8 +139,12 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
         cv_fallback_text: p.cv_fallback_text,
         job_preference: p.job_preference,
         companies_of_interest: p.companies_of_interest,
+        seen_offers: existingRows.map((o) => ({
+          company_name: o.company_name,
+          role_title: o.role_title,
+        })),
       },
-      { mode: "interactive" },
+      { mode: "interactive", allowRefresh: true },
     );
   } catch (err) {
     console.error(
@@ -141,20 +162,13 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
     };
   }
 
-  const { data: existing } = await supabase
-    .from("discovered_offers")
-    .select("company_name, role_title, source_url")
-    .eq("user_id", user.id)
-    .neq("status", "dismissed");
-
-  const existingRows = (existing ?? []) as Pick<
-    DiscoveredOffer,
-    "company_name" | "role_title" | "source_url"
-  >[];
-
   let inserted = 0;
+  let skipped = 0;
   for (const offer of result.offers) {
-    if (isDuplicateOffer(offer, existingRows)) continue;
+    if (isDuplicateOffer(offer, existingRows)) {
+      skipped += 1;
+      continue;
+    }
 
     const { error: insertError } = await supabase
       .from("discovered_offers")
@@ -177,6 +191,8 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
         role_title: offer.role_title,
         source_url: offer.source_url,
       });
+    } else {
+      skipped += 1;
     }
   }
 
@@ -184,6 +200,7 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
   return {
     ok: true,
     inserted,
+    skipped,
     removedDuplicates,
     notes: result.search_notes,
   };
@@ -266,6 +283,16 @@ export async function runDiscoveryForUserId(
   const { createServiceClient } = await import("@/lib/supabase/admin");
   const supabase = createServiceClient();
 
+  const { data: history } = await supabase
+    .from("discovered_offers")
+    .select("company_name, role_title, source_url")
+    .eq("user_id", userId);
+
+  const existingRows = (history ?? []) as Pick<
+    DiscoveredOffer,
+    "company_name" | "role_title" | "source_url"
+  >[];
+
   let result;
   try {
     result = await discoverOffersForProfile(
@@ -275,8 +302,12 @@ export async function runDiscoveryForUserId(
         cv_fallback_text: profile.cv_fallback_text,
         job_preference: profile.job_preference,
         companies_of_interest: profile.companies_of_interest,
+        seen_offers: existingRows.map((o) => ({
+          company_name: o.company_name,
+          role_title: o.role_title,
+        })),
       },
-      { mode: "full" },
+      { mode: "full", allowRefresh: true },
     );
   } catch (err) {
     return {
@@ -284,17 +315,6 @@ export async function runDiscoveryForUserId(
       error: toUserFacingError(err, DISCOVERY_ERROR_FALLBACK),
     };
   }
-
-  const { data: existing } = await supabase
-    .from("discovered_offers")
-    .select("company_name, role_title, source_url")
-    .eq("user_id", userId)
-    .neq("status", "dismissed");
-
-  const existingRows = (existing ?? []) as Pick<
-    DiscoveredOffer,
-    "company_name" | "role_title" | "source_url"
-  >[];
 
   let inserted = 0;
   for (const offer of result.offers) {

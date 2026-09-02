@@ -73,7 +73,10 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
         [
           res.inserted > 0
             ? `Trovate ${res.inserted} nuove offerte.`
-            : "Nessuna nuova offerta da aggiungere (già presenti o nessun match).",
+            : "Nessuna nuova offerta da aggiungere.",
+          res.skipped > 0
+            ? `Scartate ${res.skipped} già viste.`
+            : null,
           res.removedDuplicates > 0
             ? `Rimossi ${res.removedDuplicates} duplicati.`
             : null,
