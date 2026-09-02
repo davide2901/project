@@ -74,15 +74,15 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
           res.inserted > 0
             ? `Trovate ${res.inserted} nuove offerte.`
             : "Nessuna nuova offerta da aggiungere.",
-          res.skipped > 0
-            ? `Scartate ${res.skipped} già viste.`
-            : null,
+          res.skipped > 0 ? `Scartate ${res.skipped} già viste.` : null,
           res.removedDuplicates > 0
             ? `Rimossi ${res.removedDuplicates} duplicati.`
             : null,
-          res.notes?.length && res.inserted === 0
-            ? res.notes.slice(0, 1).join(" ")
-            : null,
+          res.degraded === "quota"
+            ? "Attenzione: ricerca web in quota Gemini; risultati senza Google Search."
+            : res.degraded === "no_grounding"
+              ? "Attenzione: ricerca web non disponibile."
+              : null,
         ]
           .filter(Boolean)
           .join(" "),

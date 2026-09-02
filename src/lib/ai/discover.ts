@@ -26,6 +26,11 @@ import {
 } from "@/lib/discovery/multi-search";
 import type { JobPreference } from "@/lib/types/database";
 
+export type DiscoveryOutcome = DiscoveryResult & {
+  /** Presente se Google Search non ha funzionato. */
+  degraded?: "quota" | "no_grounding";
+};
+
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 
 /** Budget per angolo di ricerca (ms) nel percorso full/cron. */
@@ -324,7 +329,7 @@ async function discoverInteractiveMultiSearch(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
   opts: { refresh?: boolean } = {},
-): Promise<DiscoveryResult> {
+): Promise<DiscoveryOutcome> {
   const angles = buildDiscoveryAngles(profile, { refresh: opts.refresh });
   logDiscovery("multi_start", {
     angles: angles.map((a) => a.id),
@@ -381,16 +386,23 @@ async function discoverInteractiveMultiSearch(
       ai,
       `${buildDiscoveryUserPrompt(profile, profile.seen_offers ?? [])}
 
-Nota: ricerca web non disponibile (quota o errore). Restituisci solo offerte di cui sei molto sicuro, senza inventare URL; preferisci offers: [] se non sei sicuro. Non ripetere offerte già trovate.`,
+Nota operativa: la ricerca web (Google Search) non è disponibile per quota/errore.
+Restituisci comunque fino a 6 offerte plausibili e tipiche del mercato italiano/remote IT
+allineate al profilo (aziende reali, ruoli credibili). source_url = null.
+Non ripetere offerte già trovate. Se proprio non hai nulla di sensato, offers: [].`,
       systemInstruction,
       schema,
     );
+    const failNotes = notes.filter((n) => n.includes("non riuscito"));
     return {
       ...result,
+      degraded: quotaHit ? "quota" : "no_grounding",
       search_notes: [
-        ...notes,
-        "Ricerca web non disponibile; risultati senza grounding.",
-        ...(result.search_notes ?? []),
+        quotaHit
+          ? "Ricerca web Gemini in quota (429): risultati senza Google Search."
+          : "Ricerca web non disponibile; risultati senza grounding.",
+        ...failNotes.slice(0, 3),
+        ...(result.search_notes ?? []).slice(0, 2),
       ],
     };
   } catch (err) {
@@ -476,7 +488,7 @@ Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spieg
 export async function discoverOffersForProfile(
   profile: DiscoveryProfileInput,
   options: DiscoverOptions = {},
-): Promise<DiscoveryResult> {
+): Promise<DiscoveryOutcome> {
   const mode = options.mode ?? "interactive";
   const allowRefresh = options.allowRefresh ?? mode === "interactive";
   const t0 = Date.now();
@@ -503,7 +515,7 @@ export async function discoverOffersForProfile(
 
   try {
     const ai = getClient();
-    let result: DiscoveryResult;
+    let result: DiscoveryOutcome;
 
     if (mode === "interactive") {
       try {
@@ -532,7 +544,13 @@ export async function discoverOffersForProfile(
       notes.push(`Scartate ${skippedFirst} offerte già viste al primo giro.`);
     }
 
-    if (allowRefresh && offers.length < DISCOVERY_REFRESH_MIN_NEW) {
+    // Non rilanciare Google Search se siamo già in quota: brucia limiti e non aiuta.
+    const canRefresh =
+      allowRefresh &&
+      offers.length < DISCOVERY_REFRESH_MIN_NEW &&
+      result.degraded !== "quota";
+
+    if (canRefresh) {
       const expandedSeen: SeenOfferRef[] = [
         ...seen,
         ...offers.map((o) => ({
@@ -556,12 +574,18 @@ export async function discoverOffersForProfile(
                 refresh: true,
               })
             : await discoverFullTwoStep(ai, refreshProfile);
+        if (refresh.degraded && !result.degraded) {
+          result = { ...result, degraded: refresh.degraded };
+        }
         const more = filterNovelOffers(
           refresh.offers.filter((o) =>
             preferenceAllows(o.position_type, profile.job_preference),
           ),
           [
-            ...expandedSeen.map((o) => ({ ...o, source_url: null as string | null })),
+            ...expandedSeen.map((o) => ({
+              ...o,
+              source_url: null as string | null,
+            })),
             ...offers,
           ],
         );
@@ -586,15 +610,17 @@ export async function discoverOffersForProfile(
       }
     }
 
-    const filtered = {
+    const filtered: DiscoveryOutcome = {
       offers: offers.slice(0, DISCOVERY_OFFER_CAP),
       search_notes: notes,
+      degraded: result.degraded,
     };
     logDiscovery("done", {
       mode,
       ms: Date.now() - t0,
       offers: filtered.offers.length,
       skipped: skippedFirst,
+      degraded: filtered.degraded ?? null,
     });
     return filtered;
   } catch (err) {

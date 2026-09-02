@@ -19,6 +19,7 @@ export type RunDiscoveryResult =
       skipped: number;
       notes: string[];
       removedDuplicates: number;
+      degraded?: "quota" | "no_grounding";
     }
   | { ok: false; error: string };
 
@@ -196,6 +197,14 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
     }
   }
 
+  if (inserted === 0 && result.degraded === "quota") {
+    return {
+      ok: false,
+      error:
+        "Limite Google Search Gemini raggiunto (quota). Attendi il reset o abilita billing su AI Studio, poi riprova. Non è un problema di offerte già presenti.",
+    };
+  }
+
   revalidatePath("/home");
   return {
     ok: true,
@@ -203,6 +212,7 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
     skipped,
     removedDuplicates,
     notes: result.search_notes,
+    degraded: result.degraded,
   };
 }
 
