@@ -48,13 +48,14 @@ describe("european cv template", () => {
     expect(html).toContain("Davide Test");
     expect(html).toContain("Esperienza lavorativa");
     expect(html).toContain("Pirelli Digital Solutions");
-    expect(html).toContain("cv-skill");
+    expect(html).toContain("ep-root");
   });
 
   it("genera HTML stampabile completo", () => {
     const doc = buildCvPrintHtml(sampleCv, "CV test");
     expect(doc).toContain("<!doctype html>");
-    expect(doc).toContain("cv-header");
+    expect(doc).toContain("ep-root");
+    expect(doc).toContain("ep-sidebar");
   });
 
   it("converte in testo plain con sezioni", () => {
@@ -88,6 +89,6 @@ describe("normalizeCvPackage", () => {
     const normalized = normalizeCvPackage(pkg);
     expect(normalized.european_cv).toBeTruthy();
     expect(normalized.optimized_cv_text).toContain("Davide Test");
-    expect(normalized.optimized_cv_text).toContain("ESPERIENZA LAVORATIVA");
+    expect(normalized.optimized_cv_text).toContain("PRESENTAZIONE");
   });
 });

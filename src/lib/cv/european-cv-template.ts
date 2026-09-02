@@ -1,5 +1,9 @@
 import type { EuropeanCv } from "@/lib/cv/european-cv-schema";
 
+const EU_BLUE = "#2A3C86";
+const EU_ACCENT = "#0563C1";
+const TEXT = "#3F3F3F";
+
 function escapeHtml(s: string): string {
   return s
     .replaceAll("&", "&amp;")
@@ -8,173 +12,254 @@ function escapeHtml(s: string): string {
     .replaceAll('"', "&quot;");
 }
 
-function contactLine(cv: EuropeanCv): string {
-  return [cv.location, cv.email, cv.phone]
-    .filter((v): v is string => Boolean(v?.trim()))
-    .join(" · ");
+function asset(path: string, baseUrl = ""): string {
+  const prefix = baseUrl.replace(/\/$/, "");
+  return `${prefix}/cv-europass/${path}`;
 }
 
-function renderSection(title: string, body: string): string {
-  if (!body.trim()) return "";
-  return `<section class="cv-section">
-  <h2>${escapeHtml(title)}</h2>
-  ${body}
-</section>`;
+function motherLanguage(cv: EuropeanCv): string | null {
+  const mother = cv.languages.find((l) =>
+    /madrelingua|nativo|native|materna/i.test(l.level),
+  );
+  return mother?.language ?? null;
 }
 
-function renderWorkExperience(cv: EuropeanCv): string {
-  if (!cv.work_experience.length) return "";
-  const items = cv.work_experience
+function otherLanguages(cv: EuropeanCv): string {
+  return cv.languages
+    .filter((l) => !/madrelingua|nativo|native|materna/i.test(l.level))
+    .map((l) => (l.level ? `${l.language} (${l.level})` : l.language))
+    .join(" | ");
+}
+
+function renderWorkEntries(cv: EuropeanCv): string {
+  if (!cv.work_experience.length) {
+    return `<p class="ep-empty">—</p>`;
+  }
+  return cv.work_experience
     .map((entry) => {
-      const meta = [entry.period, entry.role, entry.employer, entry.location]
-        .filter((v): v is string => Boolean(v?.trim()))
-        .join(" · ");
+      const title = [entry.role, entry.employer].filter(Boolean).join(" – ");
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
       const bullets =
         entry.highlights.length > 0
           ? `<ul>${entry.highlights.map((h) => `<li>${escapeHtml(h)}</li>`).join("")}</ul>`
           : "";
-      return `<article class="cv-entry">
-  <p class="cv-entry-meta">${escapeHtml(meta)}</p>
+      return `<article class="ep-entry">
+  <h3 class="ep-entry-title">${escapeHtml(title)}</h3>
+  ${when ? `<p class="ep-entry-when">${escapeHtml(when)}</p>` : ""}
   ${bullets}
 </article>`;
     })
     .join("");
-  return renderSection("Esperienza lavorativa", items);
 }
 
-function renderEducation(cv: EuropeanCv): string {
-  if (!cv.education.length) return "";
-  const items = cv.education
+function renderEducationEntries(cv: EuropeanCv): string {
+  if (!cv.education.length) {
+    return `<p class="ep-empty">—</p>`;
+  }
+  return cv.education
     .map((entry) => {
-      const meta = [entry.period, entry.qualification, entry.institution, entry.location]
-        .filter((v): v is string => Boolean(v?.trim()))
-        .join(" · ");
-      return `<article class="cv-entry"><p class="cv-entry-meta">${escapeHtml(meta)}</p></article>`;
+      const title = [entry.qualification, entry.institution]
+        .filter(Boolean)
+        .join(" – ");
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
+      return `<article class="ep-entry">
+  <h3 class="ep-entry-title">${escapeHtml(title)}</h3>
+  ${when ? `<p class="ep-entry-when">${escapeHtml(when)}</p>` : ""}
+</article>`;
     })
     .join("");
-  return renderSection("Istruzione e formazione", items);
 }
 
-function renderSkills(cv: EuropeanCv): string {
-  if (!cv.skills.length) return "";
-  const chips = cv.skills
-    .map((s) => `<span class="cv-skill">${escapeHtml(s)}</span>`)
+function renderSection(title: string, body: string): string {
+  if (!body.trim()) return "";
+  return `<section class="ep-section">
+  <h2 class="ep-section-title">${escapeHtml(title)}</h2>
+  ${body}
+</section>`;
+}
+
+/** HTML CV stile Europass (layout del template Word fornito). */
+export function renderEuropeanCvHtml(cv: EuropeanCv, baseUrl = ""): string {
+  const mother = motherLanguage(cv);
+  const others = otherLanguages(cv);
+  const digitalSkills = cv.skills.join("   |   ");
+  const additional = cv.additional.join(" · ");
+
+  const contacts = [
+    cv.email
+      ? `<p class="ep-contact"><img src="${asset("image6.svg", baseUrl)}" alt="" class="ep-icon" /> ${escapeHtml(cv.email)}</p>`
+      : "",
+    cv.phone
+      ? `<p class="ep-contact"><span class="ep-icon-phone">☎</span> ${escapeHtml(cv.phone)}</p>`
+      : "",
+    cv.location
+      ? `<p class="ep-contact"><img src="${asset("image8.svg", baseUrl)}" alt="" class="ep-icon" /> ${escapeHtml(cv.location)}</p>`
+      : "",
+  ]
+    .filter(Boolean)
     .join("");
-  return renderSection(
-    "Capacità e competenze",
-    `<div class="cv-skills">${chips}</div>`,
+
+  const sidebarLang = renderSection(
+    "Competenze linguistiche",
+    [
+      mother
+        ? `<p class="ep-side-line"><strong>Lingua madre:</strong> ${escapeHtml(mother.toUpperCase())}</p>`
+        : "",
+      others
+        ? `<p class="ep-side-line"><strong>Altre lingue:</strong> ${escapeHtml(others.toUpperCase())}</p>`
+        : "",
+    ].join(""),
   );
-}
 
-function renderLanguages(cv: EuropeanCv): string {
-  if (!cv.languages.length) return "";
-  const items = cv.languages
-    .map((l) => `<li><strong>${escapeHtml(l.language)}</strong> — ${escapeHtml(l.level)}</li>`)
-    .join("");
-  return renderSection("Lingue", `<ul class="cv-list">${items}</ul>`);
-}
-
-function renderAdditional(cv: EuropeanCv): string {
-  if (!cv.additional.length) return "";
-  const items = cv.additional.map((a) => `<li>${escapeHtml(a)}</li>`).join("");
-  return renderSection("Informazioni aggiuntive", `<ul class="cv-list">${items}</ul>`);
-}
-
-/** HTML del CV per anteprima/stampa (layout europeo a sezioni). */
-export function renderEuropeanCvHtml(cv: EuropeanCv): string {
-  const contacts = contactLine(cv);
-  const summary = cv.summary?.trim()
+  const sidebarDigital = cv.skills.length
     ? renderSection(
-        "Sintesi professionale",
-        `<p class="cv-summary">${escapeHtml(cv.summary.trim())}</p>`,
+        "Competenze digitali",
+        `<p class="ep-side-line">${escapeHtml(digitalSkills)}</p>`,
       )
     : "";
 
-  return `<div class="cv-root">
-  <header class="cv-header">
-    <h1>${escapeHtml(cv.full_name.trim())}</h1>
-    ${contacts ? `<p class="cv-contacts">${escapeHtml(contacts)}</p>` : ""}
-  </header>
-  ${summary}
-  ${renderWorkExperience(cv)}
-  ${renderEducation(cv)}
-  ${renderSkills(cv)}
-  ${renderLanguages(cv)}
-  ${renderAdditional(cv)}
+  const sidebarExtra = additional
+    ? renderSection(
+        "Informazioni aggiuntive",
+        `<p class="ep-side-line">${escapeHtml(additional)}</p>`,
+      )
+    : "";
+
+  const mainPresentation = cv.summary?.trim()
+    ? renderSection(
+        "Presentazione",
+        `<p class="ep-body">${escapeHtml(cv.summary.trim())}</p>`,
+      )
+    : "";
+
+  const mainEducation = renderSection(
+    "Istruzione e formazione",
+    renderEducationEntries(cv),
+  );
+  const mainWork = renderSection("Esperienza lavorativa", renderWorkEntries(cv));
+
+  return `<div class="ep-root">
+  <aside class="ep-sidebar">
+    <div class="ep-brand">
+      <img src="${asset("image5.png", baseUrl)}" alt="Europass" class="ep-brand-logo" />
+    </div>
+    <div class="ep-photo-wrap" aria-hidden="true"></div>
+    <h1 class="ep-name">${escapeHtml(cv.full_name.trim())}</h1>
+    <div class="ep-contacts">${contacts}</div>
+    ${sidebarLang}
+    ${sidebarDigital}
+    ${sidebarExtra}
+  </aside>
+  <main class="ep-main">
+    ${mainPresentation}
+    ${mainEducation}
+    ${mainWork}
+  </main>
 </div>`;
 }
 
 const PRINT_STYLES = `
-  @page { margin: 10mm 12mm; size: A4; }
+  @page { margin: 0; size: A4; }
   * { box-sizing: border-box; }
-  body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    color: #0b1f36;
+  html, body {
     margin: 0;
-    line-height: 1.4;
-    font-size: 9.5pt;
+    padding: 0;
+    font-family: Calibri, "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
+    color: ${TEXT};
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .cv-root { max-width: 100%; }
-  .cv-header {
-    background: #1a4b7c;
+  .ep-root {
+    display: grid;
+    grid-template-columns: 31% 69%;
+    min-height: 297mm;
+    width: 210mm;
+    margin: 0 auto;
+  }
+  .ep-sidebar {
+    background: ${EU_BLUE};
     color: #fff;
-    padding: 14pt 16pt 12pt;
-    margin: 0 0 12pt;
-    border-radius: 2pt;
+    padding: 10mm 7mm 12mm;
   }
-  .cv-header h1 {
-    margin: 0 0 4pt;
-    font-size: 18pt;
+  .ep-brand { margin-bottom: 6mm; }
+  .ep-brand-logo { width: 42mm; max-width: 100%; height: auto; }
+  .ep-photo-wrap { display: none; }
+  .ep-name {
+    margin: 0 0 4mm;
+    font-size: 17pt;
+    line-height: 1.15;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
-  .cv-contacts {
+  .ep-contacts { margin-bottom: 6mm; font-size: 8.5pt; line-height: 1.45; }
+  .ep-contact {
+    display: flex;
+    align-items: flex-start;
+    gap: 2mm;
+    margin: 0 0 2mm;
+    word-break: break-word;
+  }
+  .ep-icon { width: 3.5mm; height: 3.5mm; flex-shrink: 0; margin-top: 0.5mm; filter: brightness(0) invert(1); }
+  .ep-icon-phone { flex-shrink: 0; width: 3.5mm; text-align: center; opacity: 0.95; }
+  .ep-sidebar .ep-section { margin-top: 5mm; }
+  .ep-sidebar .ep-section-title {
+    margin: 0 0 2mm;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgb(255 255 255 / 0.92);
+  }
+  .ep-side-line {
     margin: 0;
-    font-size: 9pt;
-    opacity: 0.92;
+    font-size: 8pt;
+    line-height: 1.4;
+    color: rgb(255 255 255 / 0.92);
   }
-  .cv-section { margin: 0 0 10pt; }
-  .cv-section h2 {
-    margin: 0 0 5pt;
-    padding-bottom: 2pt;
-    border-bottom: 1.5pt solid #1a4b7c;
+  .ep-main {
+    padding: 10mm 9mm 12mm 8mm;
+    background: #fff;
+  }
+  .ep-main .ep-section { margin-bottom: 6mm; }
+  .ep-main .ep-section-title {
+    margin: 0 0 3mm;
+    padding-bottom: 1mm;
+    border-bottom: 1.2pt solid ${EU_ACCENT};
     font-size: 9pt;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #1a4b7c;
+    letter-spacing: 0.05em;
+    color: ${EU_ACCENT};
   }
-  .cv-summary { margin: 0; }
-  .cv-entry { margin: 0 0 7pt; }
-  .cv-entry-meta {
-    margin: 0 0 2pt;
-    font-weight: 600;
-    font-size: 9pt;
+  .ep-body { margin: 0; font-size: 9.5pt; line-height: 1.45; }
+  .ep-entry { margin: 0 0 4mm; }
+  .ep-entry-title {
+    margin: 0 0 1mm;
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: ${TEXT};
   }
-  .cv-entry ul, .cv-list {
-    margin: 0;
-    padding-left: 1.1em;
-  }
-  .cv-entry li, .cv-list li { margin: 0 0 2pt; }
-  .cv-skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4pt;
-  }
-  .cv-skill {
-    display: inline-block;
-    padding: 2pt 6pt;
-    border: 0.75pt solid #c5d4e4;
-    border-radius: 999pt;
+  .ep-entry-when {
+    margin: 0 0 1.5mm;
     font-size: 8.5pt;
-    background: #f4f8fc;
+    color: #666;
   }
+  .ep-entry ul {
+    margin: 0;
+    padding-left: 4mm;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+  .ep-entry li { margin-bottom: 1mm; }
+  .ep-empty { margin: 0; font-size: 9pt; color: #888; }
 `;
 
 /** Documento HTML completo per «Salva come PDF». */
-export function buildCvPrintHtml(cv: EuropeanCv, title?: string): string {
+export function buildCvPrintHtml(
+  cv: EuropeanCv,
+  title?: string,
+  baseUrl = "",
+): string {
   const safeTitle = escapeHtml((title ?? `CV ${cv.full_name}`).slice(0, 80));
   return `<!doctype html>
 <html lang="it">
@@ -184,7 +269,7 @@ export function buildCvPrintHtml(cv: EuropeanCv, title?: string): string {
   <style>${PRINT_STYLES}</style>
 </head>
 <body>
-  ${renderEuropeanCvHtml(cv)}
+  ${renderEuropeanCvHtml(cv, baseUrl)}
 </body>
 </html>`;
 }
@@ -193,45 +278,48 @@ export function buildCvPrintHtml(cv: EuropeanCv, title?: string): string {
 export function europeanCvToPlainText(cv: EuropeanCv): string {
   const lines: string[] = [cv.full_name.trim()];
 
-  const contacts = contactLine(cv);
+  const contacts = [cv.email, cv.phone, cv.location]
+    .filter((v): v is string => Boolean(v?.trim()))
+    .join(" · ");
   if (contacts) lines.push(contacts);
   lines.push("");
 
   if (cv.summary?.trim()) {
-    lines.push("SINTESI PROFESSIONALE", cv.summary.trim(), "");
-  }
-
-  if (cv.work_experience.length) {
-    lines.push("ESPERIENZA LAVORATIVA");
-    for (const entry of cv.work_experience) {
-      const meta = [entry.period, entry.role, entry.employer, entry.location]
-        .filter((v): v is string => Boolean(v?.trim()))
-        .join(" · ");
-      lines.push(meta);
-      for (const h of entry.highlights) lines.push(`• ${h}`);
-      lines.push("");
-    }
+    lines.push("PRESENTAZIONE", cv.summary.trim(), "");
   }
 
   if (cv.education.length) {
     lines.push("ISTRUZIONE E FORMAZIONE");
     for (const entry of cv.education) {
       lines.push(
-        [entry.period, entry.qualification, entry.institution, entry.location]
-          .filter((v): v is string => Boolean(v?.trim()))
-          .join(" · "),
+        [entry.qualification, entry.institution]
+          .filter(Boolean)
+          .join(" – "),
       );
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
+      if (when) lines.push(when);
+      lines.push("");
     }
-    lines.push("");
+  }
+
+  if (cv.work_experience.length) {
+    lines.push("ESPERIENZA LAVORATIVA");
+    for (const entry of cv.work_experience) {
+      lines.push([entry.role, entry.employer].filter(Boolean).join(" – "));
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
+      if (when) lines.push(when);
+      for (const h of entry.highlights) lines.push(`• ${h}`);
+      lines.push("");
+    }
   }
 
   if (cv.skills.length) {
-    lines.push("CAPACITÀ E COMPETENZE", cv.skills.join(" · "), "");
+    lines.push("COMPETENZE DIGITALI", cv.skills.join(" | "), "");
   }
 
   if (cv.languages.length) {
     lines.push(
-      "LINGUE",
+      "COMPETENZE LINGUISTICHE",
       ...cv.languages.map((l) => `${l.language}: ${l.level}`),
       "",
     );
@@ -242,4 +330,44 @@ export function europeanCvToPlainText(cv: EuropeanCv): string {
   }
 
   return lines.join("\n").trim();
+}
+
+/** Blocchi di testo per il template Word Europass. */
+export function europeanCvDocxFields(cv: EuropeanCv) {
+  const mother = motherLanguage(cv);
+  const others = otherLanguages(cv);
+
+  const educationBlock = cv.education
+    .map((entry) => {
+      const title = [entry.qualification, entry.institution]
+        .filter(Boolean)
+        .join(" – ");
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
+      return [title, when].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+
+  const workBlock = cv.work_experience
+    .map((entry) => {
+      const title = [entry.role, entry.employer].filter(Boolean).join(" – ");
+      const when = [entry.period, entry.location].filter(Boolean).join(" – ");
+      const bullets = entry.highlights.map((h) => `• ${h}`).join("\n");
+      return [title, when, bullets].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+
+  return {
+    full_name: cv.full_name.trim(),
+    email: cv.email?.trim() ?? "",
+    phone: cv.phone?.trim() ?? "",
+    location: cv.location?.trim() ?? "",
+    nationality: mother ? "Italiana" : "",
+    summary: cv.summary?.trim() ?? "",
+    education_block: educationBlock,
+    work_block: workBlock,
+    digital_skills: cv.skills.join("   |   "),
+    language_mother: mother?.toUpperCase() ?? "",
+    languages_other: others.toUpperCase(),
+    additional: cv.additional.join(" · "),
+  };
 }

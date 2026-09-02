@@ -6,6 +6,7 @@ import { updateApplicationStatus } from "@/app/actions/application";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { ApplicationPackage } from "@/lib/ai/schema";
 import { buildCvPrintHtml } from "@/lib/cv/european-cv-template";
+import { generateEuropassDocx, downloadBlob } from "@/lib/cv/europass-docx";
 import { resolveEuropeanCv } from "@/lib/cv/parse-cv-text";
 import {
   APPLICATION_STATUS_OPTIONS,
@@ -345,8 +346,16 @@ function ExportActions({
   const [note, setNote] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  const [busy, setBusy] = useState<"pdf" | "docx" | null>(null);
+
   function printPdf() {
-    const html = buildCvOnlyPrintHtml(data);
+    const cv = resolveEuropeanCv(data);
+    if (!cv) {
+      setNote("CV non disponibile per l'esportazione.");
+      return;
+    }
+    setBusy("pdf");
+    const html = buildCvPrintHtml(cv, `CV ${data.role_title}`, window.location.origin);
     const iframe = document.createElement("iframe");
     iframe.setAttribute("title", "CV PDF SuMisura");
     iframe.style.position = "fixed";
@@ -362,6 +371,7 @@ function ExportActions({
     const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
     if (!doc) {
       document.body.removeChild(iframe);
+      setBusy(null);
       setNote("Impossibile aprire l'anteprima di stampa. Riprova.");
       return;
     }
@@ -378,11 +388,31 @@ function ExportActions({
       } catch {
         setNote("Stampa non riuscita. Riprova.");
       } finally {
+        setBusy(null);
         window.setTimeout(() => {
           if (iframe.parentNode) document.body.removeChild(iframe);
         }, 1500);
       }
     }, 300);
+  }
+
+  async function downloadDocx() {
+    const cv = resolveEuropeanCv(data);
+    if (!cv) {
+      setNote("CV non disponibile per l'esportazione.");
+      return;
+    }
+    setBusy("docx");
+    try {
+      const blob = await generateEuropassDocx(cv);
+      const safeName = cv.full_name.replace(/[^\w\s-]/g, "").trim() || "CV";
+      downloadBlob(blob, `CV-${safeName}.docx`);
+      setNote("CV Europass scaricato in Word (.docx).");
+    } catch (err) {
+      setNote(err instanceof Error ? err.message : "Download Word non riuscito.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function openFigma() {
@@ -420,10 +450,24 @@ function ExportActions({
         Esporta CV
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Il PDF usa un template europeo a sezioni (nome, sintesi, esperienze, formazione, competenze).
+        Esporta con il template Europass (stesso layout del file Word ufficiale): PDF o
+        documento Word modificabile.
       </p>
-      <button type="button" className="btn-primary w-full" onClick={printPdf}>
-        Scarica CV in PDF
+      <button
+        type="button"
+        className="btn-primary w-full"
+        onClick={printPdf}
+        disabled={busy != null}
+      >
+        {busy === "pdf" ? "Preparazione PDF…" : "Scarica CV in PDF"}
+      </button>
+      <button
+        type="button"
+        className="btn-secondary w-full"
+        onClick={downloadDocx}
+        disabled={busy != null}
+      >
+        {busy === "docx" ? "Preparazione Word…" : "Scarica CV in Word (.docx)"}
       </button>
       <button
         type="button"
@@ -456,38 +500,6 @@ function ExportActions({
       ) : null}
     </section>
   );
-}
-
-/** PDF: CV europeo con template a sezioni. */
-function buildCvOnlyPrintHtml(data: ApplicationPackage) {
-  const cv = resolveEuropeanCv(data);
-  if (cv) {
-    return buildCvPrintHtml(cv, `CV ${data.role_title}`);
-  }
-
-  const escape = (s: string) =>
-    s
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;");
-
-  const safeTitle = `CV ${data.role_title}`.slice(0, 60);
-  return `<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <title>${escape(safeTitle)}</title>
-  <style>
-    @page { margin: 12mm 14mm; size: A4; }
-    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.4; }
-    .block { white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <div class="block">${escape(data.optimized_cv_text.trim() || "—")}</div>
-</body>
-</html>`;
 }
 
 function CopyButton({
