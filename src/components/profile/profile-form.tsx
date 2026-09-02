@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/profile";
 import { CvUpload } from "@/components/profile/cv-upload";
 import { FigmaConnectPanel } from "@/components/profile/figma-connect-panel";
+import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { CvExtract } from "@/lib/ai/cv-extract-schema";
 import type {
   FigmaConnectionStatus,
@@ -91,15 +92,18 @@ export function ProfileForm({
   const [cvEditing, setCvEditing] = useState(
     () => !fromProfile(profile).cv_fallback_text.trim(),
   );
+  const [cvSheetOpen, setCvSheetOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const lastSuccess = useRef(false);
 
   const dirty = !sameValues(values, saved);
   const skillChips = parseSkills(values.skills);
+  const hasCv = Boolean(values.cv_fallback_text.trim());
 
   useEffect(() => {
     if (state.success && !lastSuccess.current) {
       setSaved(values);
+      setCvEditing(false);
     }
     lastSuccess.current = state.success;
   }, [state.success, values]);
@@ -140,7 +144,7 @@ export function ProfileForm({
           <p className="font-semibold">Primo passo</p>
           <p className="mt-1 text-[var(--muted)]">
             Carica o incolla il CV e aggiungi le competenze che possiedi già.
-            Poi tornerai in Home per cercare offerte.
+            Poi salva e torna in Home per cercare offerte.
           </p>
         </div>
       ) : null}
@@ -149,6 +153,13 @@ export function ProfileForm({
 
       <form action={action} className="space-y-8">
         <input type="hidden" name="skills" value={values.skills} />
+        {!cvEditing ? (
+          <input
+            type="hidden"
+            name="cv_fallback_text"
+            value={values.cv_fallback_text}
+          />
+        ) : null}
 
         <section className="space-y-3">
           <label htmlFor="full_name" className="label-caps">
@@ -163,7 +174,7 @@ export function ProfileForm({
               setValues((v) => ({ ...v, full_name: e.target.value }))
             }
             className="field"
-            placeholder="Mario Rossi"
+            placeholder="Il tuo nome e cognome"
           />
         </section>
 
@@ -232,7 +243,7 @@ export function ProfileForm({
                 }
               }}
               className="field flex-1"
-              placeholder="Es. Python, Teamwork"
+              placeholder="Scrivi una competenza e premi Aggiungi"
               aria-label="Aggiungi competenza"
             />
             <button
@@ -247,21 +258,12 @@ export function ProfileForm({
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor="cv_fallback_text" className="label-caps">
-              CV
-            </label>
-            {values.cv_fallback_text.trim() ? (
-              <button
-                type="button"
-                className="text-link text-sm"
-                onClick={() => setCvEditing((v) => !v)}
-              >
-                {cvEditing ? "Anteprima" : "Modifica"}
-              </button>
-            ) : null}
-          </div>
-          {cvEditing || !values.cv_fallback_text.trim() ? (
+          <p className="label-caps">CV</p>
+          <p className="text-xs text-[var(--muted)]">
+            Caricalo sopra oppure incollalo qui. Serve per adattare il CV
+            europeo alle offerte.
+          </p>
+          {cvEditing || !hasCv ? (
             <textarea
               id="cv_fallback_text"
               name="cv_fallback_text"
@@ -271,20 +273,34 @@ export function ProfileForm({
                 setValues((v) => ({ ...v, cv_fallback_text: e.target.value }))
               }
               className="field resize-y"
-              placeholder="Incolla qui il tuo CV oppure caricalo sopra..."
+              placeholder="Incolla qui il testo del tuo CV…"
             />
           ) : (
-            <>
-              <input
-                type="hidden"
-                name="cv_fallback_text"
-                value={values.cv_fallback_text}
-              />
-              <div className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm leading-relaxed text-[var(--ink)]">
-                {values.cv_fallback_text}
+            <button
+              type="button"
+              onClick={() => setCvSheetOpen(true)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3.5 text-left shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-[var(--ink)]">CV salvato</p>
+                <p className="mt-0.5 truncate text-sm text-[var(--muted)]">
+                  Tocca per leggere o modificare
+                </p>
               </div>
-            </>
+              <span aria-hidden className="text-[var(--muted)]">
+                ›
+              </span>
+            </button>
           )}
+          {hasCv && cvEditing ? (
+            <button
+              type="button"
+              className="text-link text-sm"
+              onClick={() => setCvEditing(false)}
+            >
+              Chiudi modifica
+            </button>
+          ) : null}
         </section>
 
         <section className="space-y-3">
@@ -303,7 +319,9 @@ export function ProfileForm({
               }))
             }
             className="field resize-y"
-            placeholder={"Acme Spa\nBeta Studio"}
+            placeholder={
+              "Una azienda per riga\n(lascia vuoto se nessuna preferenza)"
+            }
           />
         </section>
 
@@ -319,7 +337,7 @@ export function ProfileForm({
                 Avanzate · Figma
               </span>
               <span className="mt-0.5 block text-xs text-[var(--muted)]">
-                Opzionale: collega i tuoi file per copiare CV e lettera
+                Opzionale: collega i tuoi file per copiare il CV
               </span>
             </span>
             <span aria-hidden className="text-[var(--muted)]">
@@ -375,7 +393,11 @@ export function ProfileForm({
             </div>
           ) : (
             <>
-              <input type="hidden" name="figma_cv_url" value={values.figma_cv_url} />
+              <input
+                type="hidden"
+                name="figma_cv_url"
+                value={values.figma_cv_url}
+              />
               <input
                 type="hidden"
                 name="figma_portfolio_url"
@@ -419,6 +441,28 @@ export function ProfileForm({
           </>
         ) : null}
       </form>
+
+      <OverlaySheet
+        open={cvSheetOpen}
+        title="Il tuo CV"
+        onClose={() => setCvSheetOpen(false)}
+        footer={
+          <button
+            type="button"
+            className="btn-secondary w-full"
+            onClick={() => {
+              setCvSheetOpen(false);
+              setCvEditing(true);
+            }}
+          >
+            Modifica testo
+          </button>
+        }
+      >
+        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--ink)]">
+          {values.cv_fallback_text}
+        </div>
+      </OverlaySheet>
     </div>
   );
 }

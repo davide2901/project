@@ -37,22 +37,7 @@ export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
             Completa il profilo
           </TabLink>
         </div>
-      ) : (
-        <ol className="grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)] shadow-[var(--shadow)]">
-          <li>
-            <span className="font-semibold text-[var(--ink)]">1.</span> Profilo
-            pronto
-          </li>
-          <li>
-            <span className="font-semibold text-[var(--ink)]">2.</span> Cerca
-            offerte qui sotto
-          </li>
-          <li>
-            <span className="font-semibold text-[var(--ink)]">3.</span> Genera CV
-            e lettera
-          </li>
-        </ol>
-      )}
+      ) : null}
 
       {!needsProfile ? (
         <DiscoveryPanel offers={data.offers} profileReady={data.profileReady} />
