@@ -73,7 +73,7 @@ export function OnboardingProgress({ steps, compact = false }: Props) {
 
       {!steps[0]?.done ? (
         <TabLink tab="profilo" className="btn-primary mt-4 inline-flex w-full justify-center">
-          Completa il profilo
+          Completa il CV
         </TabLink>
       ) : null}
     </section>
@@ -89,7 +89,7 @@ export function buildOnboardingSteps(input: {
   return [
     {
       id: "profile",
-      label: "Completa il profilo (CV o competenze)",
+      label: "Completa il CV (testo o competenze)",
       done: profileReady,
       current: !profileReady,
     },

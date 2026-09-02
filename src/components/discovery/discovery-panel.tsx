@@ -124,7 +124,7 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
           </button>
         ) : (
           <TabLink tab="profilo" className="btn-secondary btn-stack-mobile">
-            Completa il profilo
+            Completa il CV
           </TabLink>
         )}
       </div>

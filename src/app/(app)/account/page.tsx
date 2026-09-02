@@ -59,11 +59,11 @@ export default async function AccountPage() {
           Account
         </h1>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--muted)]">
-          Qui gestisci l&apos;accesso. CV, competenze e preferenze stanno nel{" "}
+          Accesso e sessione. Per CV e competenze usa la scheda{" "}
           <Link href="/profilo" className="text-link">
-            Profilo
-          </Link>
-          .
+            CV
+          </Link>{" "}
+          nel menu in basso.
         </p>
       </header>
 
@@ -76,7 +76,7 @@ export default async function AccountPage() {
         <dl className="divide-y divide-[var(--line)] text-sm">
           <DetailRow
             label="Nome"
-            value={profile?.full_name?.trim() || "Non impostato nel Profilo"}
+            value={profile?.full_name?.trim() || "Non impostato nella scheda CV"}
           />
           <DetailRow label="Email" value={user.email ?? "—"} breakAll />
           <DetailRow label="Metodo di accesso" value={providerLabel} />
@@ -87,45 +87,22 @@ export default async function AccountPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-          Profilo professionale
-        </h2>
         <Link
           href="/profilo"
           className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3.5 text-left shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
         >
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-[var(--ink)]">
-              {profileReady ? "Apri o modifica il Profilo" : "Completa il Profilo"}
+              {profileReady ? "Apri la scheda CV" : "Completa la scheda CV"}
             </p>
             <p className="mt-0.5 text-sm text-[var(--muted)]">
-              {profileReady
-                ? "CV, competenze, preferenze lavoro/stage"
-                : "Aggiungi CV o competenze per ricevere offerte"}
+              Competenze, testo CV, preferenze lavoro/stage
             </p>
           </div>
           <span aria-hidden className="text-[var(--muted)]">
             ›
           </span>
         </Link>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-          Scorciatoie
-        </h2>
-        <ul className="space-y-2">
-          <li>
-            <ShortcutRow href="/archivio" title="Archivio" subtitle="Candidature e documenti" />
-          </li>
-          <li>
-            <ShortcutRow
-              href="/statistiche"
-              title="Statistiche"
-              subtitle="Quante candidature e a che punto sono"
-            />
-          </li>
-        </ul>
       </section>
 
       <section className="space-y-3 border-t border-[var(--line)] pt-6">
@@ -162,30 +139,5 @@ function DetailRow({
         {value}
       </dd>
     </div>
-  );
-}
-
-function ShortcutRow({
-  href,
-  title,
-  subtitle,
-}: {
-  href: string;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3.5 text-left transition active:bg-[var(--tint)]"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-[var(--ink)]">{title}</p>
-        <p className="mt-0.5 text-sm text-[var(--muted)]">{subtitle}</p>
-      </div>
-      <span aria-hidden className="text-[var(--muted)]">
-        ›
-      </span>
-    </Link>
   );
 }

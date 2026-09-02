@@ -26,7 +26,7 @@ const ITEMS: {
     shortLabel: "Stats",
     icon: ChartIcon,
   },
-  { id: "profilo", label: "Profilo", icon: UserIcon },
+  { id: "profilo", label: "CV", icon: CvIcon },
 ];
 
 export function BottomNav() {
@@ -38,7 +38,7 @@ export function BottomNav() {
     : pathToTab(pathname) ??
       (pathname.startsWith("/archivio") || pathname.startsWith("/candidatura")
         ? "archivio"
-        : pathname.startsWith("/profilo") || pathname.startsWith("/account")
+        : pathname.startsWith("/profilo")
           ? "profilo"
           : pathname.startsWith("/statistiche")
             ? "statistiche"
@@ -147,23 +147,28 @@ function ChartIcon({ active }: { active: boolean }) {
   );
 }
 
-function UserIcon({ active }: { active: boolean }) {
+function CvIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle
-        cx="12"
-        cy="8"
-        r="3.25"
+      <path
+        d="M7 3.75h7.5L19 8.25V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.75a1 1 0 0 1 1-1Z"
         stroke="currentColor"
         strokeWidth="1.75"
+        strokeLinejoin="round"
         fill={active ? "currentColor" : "none"}
       />
       <path
-        d="M5 19.5c1.6-3.2 4-4.75 7-4.75s5.4 1.55 7 4.75"
+        d="M14 3.75V8h4.5"
         stroke="currentColor"
         strokeWidth="1.75"
+        strokeLinejoin="round"
+        opacity={active ? 0.35 : 1}
+      />
+      <path
+        d="M9 12h6M9 15.5h6"
+        stroke={active ? "var(--background)" : "currentColor"}
+        strokeWidth="1.75"
         strokeLinecap="round"
-        fill={active ? "currentColor" : "none"}
       />
     </svg>
   );

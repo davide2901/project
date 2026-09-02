@@ -423,7 +423,7 @@ export function ProfileForm({
             className="rounded-md bg-[var(--tint)] px-3 py-2 text-sm text-[var(--ink)]"
             role="status"
           >
-            Profilo salvato.
+            Salvato.
           </p>
         ) : null}
 
@@ -437,7 +437,7 @@ export function ProfileForm({
                   className="btn-primary w-full"
                   disabled={pending}
                 >
-                  {pending ? "Salvataggio..." : "Salva profilo"}
+                  {pending ? "Salvataggio..." : "Salva"}
                 </button>
               </div>
             </div>

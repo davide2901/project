@@ -14,7 +14,7 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
   if (data.error) {
     return (
       <div className="space-y-3">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl">Profilo</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl">CV</h1>
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
           Impossibile caricare il profilo. Riprova più tardi.
         </p>
@@ -25,7 +25,7 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
   if (!data.profile) {
     return (
       <div className="space-y-3">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl">Profilo</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl">CV</h1>
         <p className="text-sm text-[var(--muted)]">
           Nessun profilo trovato. Contatta il supporto o riprova più tardi.
         </p>
@@ -47,12 +47,12 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
     <div className="space-y-8">
       <header className="space-y-2">
         <h1 className="font-[family-name:var(--font-display)] text-[1.85rem] tracking-tight text-[var(--ink)] sm:text-3xl">
-          Il tuo profilo
+          Il tuo CV
         </h1>
         <p className="max-w-prose text-sm text-[var(--muted)]">
           {profileReady ? (
             <>
-              Qui aggiorni CV e competenze. Quando sei pronto, torna in{" "}
+              Competenze, testo CV e preferenze. Quando sei pronto, torna in{" "}
               <Link href="/home" className="text-link">
                 Home
               </Link>{" "}
@@ -60,7 +60,7 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
             </>
           ) : (
             <>
-              Qui inserisci chi sei e cosa sai fare davvero. È il primo passo
+              Qui metti il CV e le competenze che possiedi già. È il primo passo
               per ricevere proposte utili.
             </>
           )}
