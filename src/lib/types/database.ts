@@ -79,6 +79,7 @@ export type Application = {
   role_title: string;
   position_type: ApplicationPositionType;
   offer_source: string | null;
+  offer_fingerprint: string;
   package: ApplicationPackage;
   status: ApplicationStatus;
   deleted_at: string | null;
@@ -184,6 +185,7 @@ export type Database = {
           role_title: string;
           position_type?: ApplicationPositionType;
           offer_source?: string | null;
+          offer_fingerprint?: string;
           package: ApplicationPackage;
           status?: ApplicationStatus;
           deleted_at?: string | null;
@@ -197,6 +199,7 @@ export type Database = {
           role_title?: string;
           position_type?: ApplicationPositionType;
           offer_source?: string | null;
+          offer_fingerprint?: string;
           package?: ApplicationPackage;
           status?: ApplicationStatus;
           deleted_at?: string | null;

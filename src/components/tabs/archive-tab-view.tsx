@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SoftDaylightSpot } from "@/components/brand/soft-daylight-spot";
+import { TabLink } from "@/components/layout/tab-link";
 import {
   APPLICATION_STATUS_OPTIONS,
   companyInitials,
@@ -56,9 +57,9 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
       {!error && items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-4 py-10 text-center">
           <SoftDaylightSpot title="Nessuna candidatura ancora. Generane una su misura dalla Home." />
-          <Link href="/home" className="mt-6 inline-flex btn-primary">
+          <TabLink tab="home" className="mt-6 inline-flex btn-primary">
             Vai alla Home
-          </Link>
+          </TabLink>
         </div>
       ) : null}
 

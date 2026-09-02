@@ -10,6 +10,7 @@ import {
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
 import { applyPreferenceFilter } from "@/lib/application/preference";
+import { createOfferFingerprint } from "@/lib/application/fingerprint";
 import { resolveCvSource } from "@/lib/cv/resolve-source";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus, Profile } from "@/lib/types/database";
@@ -119,6 +120,67 @@ export async function generateApplicationFromOffer(
     ? "CV preso dal testo del Profilo."
     : "CV costruito dalle competenze dichiarate nel Profilo.";
 
+  const offerFingerprint = createOfferFingerprint(
+    data.company_name,
+    data.role_title,
+    trimmed,
+  );
+
+  // Se esiste già una candidatura attiva per la stessa offerta, aggiorna i documenti.
+  const { data: existingActive } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("offer_fingerprint", offerFingerprint)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (existingActive?.id) {
+    const { error: updateError } = await supabase
+      .from("applications")
+      .update({
+        company_name: data.company_name,
+        role_title: data.role_title,
+        position_type: data.position_type,
+        offer_source: trimmed,
+        package: data,
+        status: "ready",
+        offer_fingerprint: offerFingerprint,
+      })
+      .eq("id", existingActive.id)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      return { ok: false, error: updateError.message };
+    }
+
+    revalidatePath("/archivio");
+    revalidatePath(`/archivio/${existingActive.id}`);
+    revalidatePath("/home");
+
+    let figmaSyncCode: string | null = null;
+    if (p.figma_cv_url?.trim()) {
+      const queued = await queueFigmaExport({
+        applicationId: existingActive.id as string,
+        companyName: data.company_name,
+        roleTitle: data.role_title,
+        optimizedCvText: data.optimized_cv_text,
+        coverLetter: data.cover_letter,
+      });
+      if (queued.ok) figmaSyncCode = queued.syncCode;
+    }
+
+    return {
+      ok: true,
+      data,
+      applicationId: existingActive.id as string,
+      cvSourceLabel,
+      figmaCvUrl: p.figma_cv_url?.trim() || null,
+      figmaPortfolioUrl: p.figma_portfolio_url?.trim() || null,
+      figmaSyncCode,
+    };
+  }
+
   const { data: row, error: insertError } = await supabase
     .from("applications")
     .insert({
@@ -129,11 +191,20 @@ export async function generateApplicationFromOffer(
       offer_source: trimmed,
       package: data,
       status: "ready",
+      offer_fingerprint: offerFingerprint,
     })
     .select("id")
     .single();
 
   if (insertError || !row) {
+    const msg = insertError?.message ?? "";
+    if (/offer_fingerprint|duplicate key/i.test(msg)) {
+      return {
+        ok: false,
+        error:
+          "Hai già una candidatura per questa offerta. Aprila dall'Archivio o eliminala e riprova.",
+      };
+    }
     return {
       ok: false,
       error:

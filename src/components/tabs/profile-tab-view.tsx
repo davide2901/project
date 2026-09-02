@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense } from "react";
 
 import {
   buildOnboardingSteps,
   OnboardingProgress,
 } from "@/components/onboarding/onboarding-progress";
+import { TabLink } from "@/components/layout/tab-link";
 import { ProfileForm } from "@/components/profile/profile-form";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
 
@@ -53,9 +53,9 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
           {profileReady ? (
             <>
               Competenze, testo CV e preferenze. Quando sei pronto, torna in{" "}
-              <Link href="/home" className="text-link">
+              <TabLink tab="home" className="text-link">
                 Home
-              </Link>{" "}
+              </TabLink>{" "}
               per cercare offerte.
             </>
           ) : (
