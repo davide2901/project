@@ -36,8 +36,10 @@ REGOLE D'ORO (obbligatorie):
 2. optimized_cv_text = CV IN FORMATO EUROPEO (italiano), partendo dal CV caricato/incollato:
    - Conserva i fatti del candidato (date, sedi, titoli, aziende).
    - Adatta all'offerta: riordina sezioni/bullet, evidenzia ciò che è rilevante, riduci o ometti dettagli poco utili per quel ruolo.
-   - Struttura tipica con titoli in MAIUSCOLO su riga propria: INFORMAZIONI PERSONALI (o nome in prima riga + contatti), SINTESI, ESPERIENZA LAVORATIVA, ISTRUZIONE E FORMAZIONE, CAPACITÀ E COMPETENZE, eventuale INFORMAZIONI AGGIUNTIVE.
-   - Usa elenchi con "• " per esperienze e competenze.
+   - Obiettivo LUNGHEZZA: massimo 1 pagina A4 (testo compatto, niente riempitivi).
+   - Prima riga = NOME E COGNOME in chiaro (niente titolo "CV" o nome azienda).
+   - Poi contatti su una riga, poi sezioni con titoli in MAIUSCOLO su riga propria: INFORMAZIONI PERSONALI (opzionale se già in testa), SINTESI, ESPERIENZA LAVORATIVA, ISTRUZIONE E FORMAZIONE, CAPACITÀ E COMPETENZE.
+   - Usa elenchi con "• " per esperienze e competenze; max 3–4 bullet per esperienza.
    - Non è un CV generico inventato: è una revisione mirata del CV originale.
 3. matched_skills: solo voci che compaiono nel CV o nelle competenze dichiarate (stesso significato ok, sinonimi inventati no).
 4. omitted_offer_requirements: elenca requisiti dell'offerta NON coperti dal profilo — non nasconderli.

@@ -466,45 +466,50 @@ function buildCvOnlyPrintHtml(data: ApplicationPackage) {
       .replaceAll('"', "&quot;");
 
   const cvHtml = formatEuropeanCvHtml(data.optimized_cv_text, escape);
+  const safeTitle = `CV ${data.role_title}`.slice(0, 60);
 
   return `<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <title>CV — ${escape(data.role_title)} · ${escape(data.company_name)}</title>
+  <title>${escape(safeTitle)}</title>
   <style>
-    @page { margin: 18mm 16mm; }
+    @page { margin: 12mm 14mm; size: A4; }
+    * { box-sizing: border-box; }
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       color: #0b1f36;
       margin: 0;
-      line-height: 1.45;
-      font-size: 11pt;
+      line-height: 1.35;
+      font-size: 10pt;
     }
-    .meta { color: #5a6b7c; font-size: 9pt; margin: 0 0 14pt; }
     h1 {
-      font-size: 18pt;
-      margin: 0 0 4pt;
+      font-size: 16pt;
+      margin: 0 0 2pt;
       font-weight: 700;
       letter-spacing: 0.01em;
     }
+    .contacts {
+      color: #5a6b7c;
+      font-size: 9pt;
+      margin: 0 0 10pt;
+    }
     h2 {
-      font-size: 10.5pt;
-      margin: 16pt 0 6pt;
-      padding-bottom: 3pt;
-      border-bottom: 1.5px solid #0b1f36;
+      font-size: 9.5pt;
+      margin: 10pt 0 4pt;
+      padding-bottom: 2pt;
+      border-bottom: 1px solid #0b1f36;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       font-weight: 700;
     }
-    p { margin: 0 0 6pt; }
-    ul { margin: 0 0 6pt; padding-left: 1.1em; }
-    li { margin: 0 0 3pt; }
+    p { margin: 0 0 4pt; }
+    ul { margin: 0 0 4pt; padding-left: 1.05em; }
+    li { margin: 0 0 2pt; }
     .block { white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <p class="meta">CV · ${escape(data.company_name)} — ${escape(data.role_title)} · SuMisura</p>
   ${cvHtml}
 </body>
 </html>`;
@@ -518,27 +523,30 @@ function formatEuropeanCvHtml(
   if (!text) return "<p>—</p>";
 
   const sectionRe =
-    /^(INFORMAZIONI PERSONALI|ESPERIENZA LAVORATIVA|ESPERIENZA PROFESSIONALE|ISTRUZIONE E FORMAZIONE|ISTRUZIONE|FORMAZIONE|CAPACITÀ E COMPETENZE|COMPETENZE|LINGUE|SINTESI|PROFILO|INFORMAZIONI AGGIUNTIVE|ALTRE INFORMAZIONI)\s*$/im;
+    /^(INFORMAZIONI PERSONALI|ESPERIENZA LAVORATIVA|ESPERIENZA PROFESSIONALE|ISTRUZIONE E FORMAZIONE|ISTRUZIONE|FORMAZIONE|CAPACITÀ E COMPETENZE|COMPETENZE|LINGUE|SINTESI|SINTESI PROFESSIONALE|PROFILO|INFORMAZIONI AGGIUNTIVE|ALTRE INFORMAZIONI)\s*$/im;
 
   const lines = text.split(/\r?\n/);
-  const firstLine = lines[0]?.trim() ?? "";
-  const looksLikeName =
-    firstLine.length > 0 &&
-    firstLine.length < 80 &&
-    !sectionRe.test(firstLine) &&
-    !firstLine.includes(":");
-
   let html = "";
   let i = 0;
-  if (looksLikeName) {
+
+  // Nome: prima riga libera, oppure "Nome: …" nelle info personali
+  const firstLine = lines[0]?.trim() ?? "";
+  const nomeField = text.match(/^Nome\s*:\s*(.+)$/im)?.[1]?.trim();
+  if (
+    firstLine &&
+    firstLine.length < 80 &&
+    !sectionRe.test(firstLine) &&
+    !firstLine.includes(":")
+  ) {
     html += `<h1>${escape(firstLine)}</h1>`;
     i = 1;
-    // contact line often follows
     while (i < lines.length && lines[i].trim() === "") i += 1;
     if (i < lines.length && !sectionRe.test(lines[i].trim())) {
-      html += `<p class="meta">${escape(lines[i].trim())}</p>`;
+      html += `<p class="contacts">${escape(lines[i].trim())}</p>`;
       i += 1;
     }
+  } else if (nomeField) {
+    html += `<h1>${escape(nomeField)}</h1>`;
   }
 
   let inList = false;
@@ -550,10 +558,13 @@ function formatEuropeanCvHtml(
   };
 
   for (; i < lines.length; i += 1) {
-    const line = lines[i];
-    const trimmed = line.trim();
+    const trimmed = lines[i].trim();
     if (!trimmed) {
       flushList();
+      continue;
+    }
+    // Evita di ripetere il nome già in h1
+    if (nomeField && /^Nome\s*:/i.test(trimmed) && html.includes("<h1>")) {
       continue;
     }
     if (sectionRe.test(trimmed)) {
