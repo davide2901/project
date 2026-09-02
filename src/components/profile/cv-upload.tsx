@@ -37,8 +37,8 @@ export function CvUpload({ onExtracted, hasExistingCv = false }: CvUploadProps) 
         </summary>
         <div className="mt-3 space-y-3 border-t border-[var(--line)] pt-3">
           <p className="text-sm text-[var(--muted)]">
-            Hai già un CV nel profilo. Carica un nuovo file solo se vuoi
-            sostituirlo: rivedi i campi e premi Salva profilo.
+            Hai già un CV salvato. Carica un nuovo file solo se vuoi
+            sostituirlo: rivedi i campi e premi Salva.
           </p>
           <UploadForm
             action={action}
@@ -57,7 +57,7 @@ export function CvUpload({ onExtracted, hasExistingCv = false }: CvUploadProps) 
         <p className="label-caps">Carica CV</p>
         <p className="text-sm text-[var(--muted)]">
           PDF, DOCX o foto: lo analizziamo e precompiliamo i campi sotto.
-          Controlla sempre e premi Salva profilo.
+          Controlla sempre e premi Salva.
         </p>
       </div>
       <UploadForm
@@ -112,8 +112,7 @@ function UploadForm({
           className="rounded-md bg-[var(--tint)] px-3 py-2 text-sm text-[var(--ink)]"
           role="status"
         >
-          CV analizzato: campi aggiornati qui sotto. Rivedi e premi Salva
-          profilo.
+          CV analizzato: campi aggiornati qui sotto. Rivedi e premi Salva.
           {state.extract.notes ? ` (${state.extract.notes})` : null}
         </p>
       ) : null}
