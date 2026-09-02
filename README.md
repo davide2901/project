@@ -74,7 +74,7 @@ In **Home**, con profilo completo (competenze o CV):
 
 1. Tocca **Cerca offerte** → Gemini + Google Search
 2. Le proposte restano in `discovered_offers` (status `new`)
-3. **Genera** avvia la candidatura esistente; **Nascondi** marca `dismissed`
+3. **Genera** avvia la candidatura esistente; **Elimina** rimuove la riga da `discovered_offers`
 
 Mock: `USE_AI_MOCK=true` usa [`fixtures/discovery/offers.json`](fixtures/discovery/offers.json).
 

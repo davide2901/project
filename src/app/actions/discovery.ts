@@ -71,7 +71,7 @@ async function dismissExistingDuplicates(
 
   const { error } = await supabase
     .from("discovered_offers")
-    .update({ status: "dismissed" })
+    .delete()
     .eq("user_id", userId)
     .in("id", toDismiss);
 
@@ -217,7 +217,7 @@ export async function dismissOffer(
 
   const { error } = await supabase
     .from("discovered_offers")
-    .update({ status: "dismissed" })
+    .delete()
     .eq("id", id)
     .eq("user_id", user.id);
 

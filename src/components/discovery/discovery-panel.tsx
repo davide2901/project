@@ -236,8 +236,8 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                 onClick={() => onDismiss(openOffer.id)}
               >
                 {busy?.kind === "dismiss" && busy.id === openOffer.id
-                  ? "Nascondo…"
-                  : "Nascondi"}
+                  ? "Elimino…"
+                  : "Elimina"}
               </button>
             </div>
           ) : null
