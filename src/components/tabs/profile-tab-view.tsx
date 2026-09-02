@@ -12,7 +12,7 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
       <div className="space-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl">Profilo</h1>
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          Impossibile caricare il profilo: {data.error}
+          Impossibile caricare il profilo. Riprova più tardi.
         </p>
       </div>
     );
@@ -23,12 +23,15 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
       <div className="space-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl">Profilo</h1>
         <p className="text-sm text-[var(--muted)]">
-          Nessun profilo trovato. Verifica la migration SQL su Supabase
-          (inclusa 006_figma_oauth.sql).
+          Nessun profilo trovato. Contatta il supporto o riprova più tardi.
         </p>
       </div>
     );
   }
+
+  const profileReady = Boolean(
+    data.profile.skills.length > 0 || data.profile.cv_fallback_text?.trim(),
+  );
 
   return (
     <div className="space-y-8">
@@ -37,11 +40,20 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
           Il tuo profilo
         </h1>
         <p className="max-w-prose text-sm text-[var(--muted)]">
-          Raccontaci chi sei e cosa stai cercando. Poi{" "}
-          <Link href="/candidatura/nuova" className="text-link">
-            nuova candidatura
-          </Link>
-          .
+          {profileReady ? (
+            <>
+              Profilo pronto. Torna in{" "}
+              <Link href="/home" className="text-link">
+                Home
+              </Link>{" "}
+              per cercare offerte o genera una candidatura.
+            </>
+          ) : (
+            <>
+              Qui inserisci chi sei e cosa sai fare davvero. È il primo passo
+              per ricevere proposte utili.
+            </>
+          )}
         </p>
       </header>
       <Suspense fallback={null}>
@@ -49,6 +61,7 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
           profile={data.profile}
           figmaOAuthConfigured={data.figmaOAuthConfigured}
           figmaStatus={data.figmaStatus}
+          showOnboardingHint={!profileReady}
         />
       </Suspense>
     </div>

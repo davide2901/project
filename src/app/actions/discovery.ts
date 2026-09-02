@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { generateApplicationFromOffer } from "@/app/actions/application";
 import { discoverOffersForProfile } from "@/lib/ai/discover";
+import {
+  DISCOVERY_ERROR_FALLBACK,
+  toUserFacingError,
+} from "@/lib/ai/user-facing-error";
 import { isDuplicateOffer } from "@/lib/discovery/dedupe";
 import { createClient } from "@/lib/supabase/server";
 import type { DiscoveredOffer, Profile } from "@/lib/types/database";
@@ -113,7 +117,7 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Discovery fallita.",
+      error: toUserFacingError(err, DISCOVERY_ERROR_FALLBACK),
     };
   }
 
@@ -254,7 +258,7 @@ export async function runDiscoveryForUserId(
   } catch (err) {
     return {
       inserted: 0,
-      error: err instanceof Error ? err.message : "discovery failed",
+      error: toUserFacingError(err, DISCOVERY_ERROR_FALLBACK),
     };
   }
 

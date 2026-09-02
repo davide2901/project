@@ -17,7 +17,13 @@ export const viewport: Viewport = {
 const emptyBootstrap: TabsBootstrap = {
   home: { count: 0, firstName: null, profileReady: false, offers: [] },
   archivio: { items: [], error: null },
-  statistiche: { total: 0, lavoro: 0, stage: 0 },
+  statistiche: {
+    total: 0,
+    lavoro: 0,
+    stage: 0,
+    byStatus: {},
+    latest: null,
+  },
   profilo: {
     profile: null,
     error: null,

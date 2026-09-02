@@ -5,10 +5,14 @@ import { revalidatePath } from "next/cache";
 import { queueFigmaExport } from "@/app/actions/figma";
 import { generateApplicationPackage } from "@/lib/ai/generate";
 import type { ApplicationPackage } from "@/lib/ai/schema";
+import {
+  GENERATION_ERROR_FALLBACK,
+  toUserFacingError,
+} from "@/lib/ai/user-facing-error";
 import { applyPreferenceFilter } from "@/lib/application/preference";
 import { resolveCvSource } from "@/lib/cv/resolve-source";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/lib/types/database";
+import type { ApplicationStatus, Profile } from "@/lib/types/database";
 
 export type GenerateApplicationResult =
   | {
@@ -81,9 +85,13 @@ export async function generateApplicationFromOffer(
       job_preference: p.job_preference,
     });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Impossibile risolvere il materiale CV.";
-    return { ok: false, error: message };
+    return {
+      ok: false,
+      error: toUserFacingError(
+        err,
+        "Impossibile leggere il materiale CV. Controlla il profilo e riprova.",
+      ),
+    };
   }
 
   let data: ApplicationPackage;
@@ -101,9 +109,10 @@ export async function generateApplicationFromOffer(
     });
     data = applyPreferenceFilter(data, p.job_preference);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Errore sconosciuto nella generazione.";
-    return { ok: false, error: message };
+    return {
+      ok: false,
+      error: toUserFacingError(err, GENERATION_ERROR_FALLBACK),
+    };
   }
 
   const cvSourceLabel = p.cv_fallback_text?.trim()
@@ -119,7 +128,7 @@ export async function generateApplicationFromOffer(
       position_type: data.position_type,
       offer_source: trimmed,
       package: data,
-      status: "draft",
+      status: "ready",
     })
     .select("id")
     .single();
@@ -185,5 +194,50 @@ export async function softDeleteApplication(
 
   revalidatePath("/archivio");
   revalidatePath(`/archivio/${id}`);
+  revalidatePath("/statistiche");
+  revalidatePath("/home");
+  return { ok: true };
+}
+
+const ALLOWED_STATUSES: ApplicationStatus[] = [
+  "ready",
+  "sent",
+  "waiting",
+  "interview",
+  "closed",
+];
+
+export async function updateApplicationStatus(
+  id: string,
+  status: ApplicationStatus,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return { ok: false, error: "Stato non valido." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "Sessione scaduta. Accedi di nuovo." };
+  }
+
+  const { error } = await supabase
+    .from("applications")
+    .update({ status })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .is("deleted_at", null);
+
+  if (error) {
+    return { ok: false, error: toUserFacingError(error.message, "Impossibile aggiornare lo stato.") };
+  }
+
+  revalidatePath("/archivio");
+  revalidatePath(`/archivio/${id}`);
+  revalidatePath("/statistiche");
+  revalidatePath("/home");
   return { ok: true };
 }

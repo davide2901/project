@@ -41,9 +41,30 @@ export default async function HomePage() {
           aria-hidden
         />
         <p className="animate-fade-up-delay mt-5 max-w-sm text-base leading-relaxed text-[var(--sand-muted)] sm:text-lg">
-          Candidature su misura: CV e lettera allineati all&apos;offerta, senza
-          inventare competenze.
+          Candidature allineate all&apos;offerta, senza inventare competenze.
         </p>
+
+        <ol className="animate-fade-up-delay mt-8 max-w-sm space-y-3 text-sm leading-relaxed text-[var(--sand-muted)]">
+          <li className="flex gap-3">
+            <span className="font-[family-name:var(--font-display)] text-[var(--sand)]">
+              1
+            </span>
+            <span>Completa il profilo con CV e competenze reali</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="font-[family-name:var(--font-display)] text-[var(--sand)]">
+              2
+            </span>
+            <span>Trova offerte adatte a te</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="font-[family-name:var(--font-display)] text-[var(--sand)]">
+              3
+            </span>
+            <span>Genera CV, lettera e PDF pronti da inviare</span>
+          </li>
+        </ol>
+
         <div className="animate-fade-up-delay mt-10 flex w-full flex-col gap-3">
           <Link href="/register" className="btn-landing-primary w-full sm:w-auto">
             Inizia gratis

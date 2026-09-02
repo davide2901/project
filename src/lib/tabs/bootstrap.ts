@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getFigmaConnectionStatus } from "@/lib/figma/connection";
 import { isFigmaOAuthConfigured } from "@/lib/figma/oauth";
+import { normalizeStatus } from "@/lib/application/labels";
 import type {
   ApplicationListItem,
+  ApplicationStatus,
   DiscoveredOffer,
   FigmaConnectionStatus,
   Profile,
@@ -26,6 +28,8 @@ export type TabsBootstrap = {
     total: number;
     lavoro: number;
     stage: number;
+    byStatus: Partial<Record<ApplicationStatus, number>>;
+    latest: ApplicationListItem | null;
   };
   profilo: {
     profile: Profile | null;
@@ -92,6 +96,12 @@ export async function loadTabsBootstrap(
       (profile.skills.length > 0 || profile.cv_fallback_text?.trim()),
   );
 
+  const byStatus: Partial<Record<ApplicationStatus, number>> = {};
+  for (const app of apps) {
+    const key = normalizeStatus(app.status);
+    byStatus[key] = (byStatus[key] ?? 0) + 1;
+  }
+
   return {
     home: {
       count: countRes.count,
@@ -107,6 +117,8 @@ export async function loadTabsBootstrap(
       total: apps.length,
       lavoro: apps.filter((a) => a.position_type === "lavoro").length,
       stage: apps.filter((a) => a.position_type === "stage").length,
+      byStatus,
+      latest: apps[0] ?? null,
     },
     profilo: {
       profile,

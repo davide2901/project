@@ -84,14 +84,15 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
   }
 
   return (
-    <section className="space-y-4 border-t border-[var(--line)] pt-6">
+    <section className="space-y-4">
       <div className="flex flex-col gap-3">
         <div className="space-y-1">
           <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
             Offerte per te
           </h2>
           <p className="max-w-prose text-sm leading-relaxed text-[var(--muted)]">
-            Tocca una proposta per i dettagli, poi genera la candidatura.
+            Tocca una proposta, leggi perché ti è adatta, poi genera CV e
+            lettera.
           </p>
         </div>
         {profileReady ? (
@@ -101,7 +102,7 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
             disabled={pending}
             onClick={onSearch}
           >
-            {pending && !busyId ? "Ricerca..." : "Cerca offerte"}
+            {pending && !busyId ? "Ricerca in corso…" : "Cerca offerte"}
           </button>
         ) : (
           <TabLink tab="profilo" className="btn-secondary btn-stack-mobile">
@@ -110,21 +111,17 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
         )}
       </div>
 
-      {!profileReady ? (
-        <p className="rounded-lg border border-[var(--line)] bg-[var(--tint)] px-3 py-3 text-sm leading-relaxed text-[var(--ink)]">
-          Aggiungi competenze o CV nel profilo: così possiamo proporti offerte
-          adatte.
-        </p>
-      ) : null}
-
       {error ? (
-        <p className="rounded-md bg-red-50 px-3 py-3 text-sm text-red-700" role="alert">
+        <p
+          className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
       {message ? (
         <p
-          className="rounded-md bg-[var(--tint)] px-3 py-3 text-sm text-[var(--ink)]"
+          className="rounded-xl border border-[var(--line)] bg-[var(--tint)] px-3 py-3 text-sm text-[var(--ink)]"
           role="status"
         >
           {message}
@@ -186,8 +183,9 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                     </p>
                   ) : null}
                   {offer.match_reason ? (
-                    <p className="text-xs leading-relaxed text-[var(--muted)]">
-                      Perché: {offer.match_reason}
+                    <p className="rounded-lg bg-[var(--tint)] px-3 py-2 text-sm leading-relaxed text-[var(--ink)]">
+                      <span className="font-semibold">Perché per te: </span>
+                      {offer.match_reason}
                     </p>
                   ) : null}
                   {offer.source_url ? (
@@ -207,7 +205,9 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                       disabled={pending || busyId === offer.id}
                       onClick={() => onApply(offer.id)}
                     >
-                      {busyId === offer.id ? "…" : "Genera"}
+                      {busyId === offer.id
+                        ? "Generazione…"
+                        : "Genera candidatura"}
                     </button>
                     <button
                       type="button"

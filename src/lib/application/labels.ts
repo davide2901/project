@@ -12,19 +12,29 @@ export function labelPosition(type: ApplicationPackage["position_type"]) {
   }
 }
 
+export const APPLICATION_STATUS_OPTIONS: {
+  value: ApplicationStatus;
+  label: string;
+}[] = [
+  { value: "ready", label: "Da inviare" },
+  { value: "sent", label: "Inviata" },
+  { value: "waiting", label: "In attesa" },
+  { value: "interview", label: "Colloquio" },
+  { value: "closed", label: "Chiusa" },
+];
+
+export function normalizeStatus(status: ApplicationStatus): ApplicationStatus {
+  if (status === "draft") return "ready";
+  if (status === "archived") return "closed";
+  return status;
+}
+
 export function labelStatus(status: ApplicationStatus) {
-  switch (status) {
-    case "draft":
-      return "Bozza";
-    case "ready":
-      return "Pronta";
-    case "sent":
-      return "Inviata";
-    case "archived":
-      return "Archiviata";
-    default:
-      return status;
-  }
+  const normalized = normalizeStatus(status);
+  return (
+    APPLICATION_STATUS_OPTIONS.find((o) => o.value === normalized)?.label ??
+    status
+  );
 }
 
 export function companyInitials(name: string) {

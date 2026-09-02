@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+import {
+  APPLICATION_STATUS_OPTIONS,
+  labelStatus,
+} from "@/lib/application/labels";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
 
 export function StatsTabView({ data }: { data: TabsBootstrap["statistiche"] }) {
@@ -14,7 +18,7 @@ export function StatsTabView({ data }: { data: TabsBootstrap["statistiche"] }) {
           Statistiche
         </h1>
         <p className="text-sm text-[var(--muted)]">
-          Riepilogo delle candidature salvate in archivio.
+          Quante candidature hai e a che punto sono.
         </p>
       </header>
 
@@ -25,30 +29,63 @@ export function StatsTabView({ data }: { data: TabsBootstrap["statistiche"] }) {
       </dl>
 
       {hasData ? (
-        <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
-          <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-            Mix posizioni
-          </h2>
-          <BarRow
-            label="Lavoro"
-            count={data.lavoro}
-            total={data.total}
-          />
-          <BarRow label="Stage" count={data.stage} total={data.total} />
-          <BarRow
-            label="Altro / non chiaro"
-            count={Math.max(0, data.total - data.lavoro - data.stage)}
-            total={data.total}
-          />
-        </section>
+        <>
+          <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
+            <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
+              Per stato
+            </h2>
+            {APPLICATION_STATUS_OPTIONS.map((opt) => (
+              <BarRow
+                key={opt.value}
+                label={opt.label}
+                count={data.byStatus[opt.value] ?? 0}
+                total={data.total}
+              />
+            ))}
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
+            <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
+              Mix posizioni
+            </h2>
+            <BarRow label="Lavoro" count={data.lavoro} total={data.total} />
+            <BarRow label="Stage" count={data.stage} total={data.total} />
+            <BarRow
+              label="Altro / non chiaro"
+              count={Math.max(0, data.total - data.lavoro - data.stage)}
+              total={data.total}
+            />
+          </section>
+
+          {data.latest ? (
+            <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
+              <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
+                Ultima candidatura
+              </h2>
+              <p className="mt-2 font-semibold text-[var(--ink)]">
+                {data.latest.company_name}
+              </p>
+              <p className="text-sm text-[var(--ink)]">{data.latest.role_title}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {labelStatus(data.latest.status)}
+              </p>
+              <Link
+                href={`/archivio/${data.latest.id}`}
+                className="text-link mt-3 inline-flex min-h-10 items-center text-sm"
+              >
+                Apri documenti
+              </Link>
+            </section>
+          ) : null}
+        </>
       ) : (
         <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-4 py-10 text-center">
           <p className="text-sm text-[var(--muted)]">
-            Nessuna candidatura ancora: le stats si aggiornano quando ne salvi
+            Nessuna candidatura ancora: le stats si aggiornano quando ne generi
             una.
           </p>
-          <Link href="/candidatura/nuova" className="btn-primary mt-5 inline-flex">
-            Nuova candidatura
+          <Link href="/home" className="btn-primary mt-5 inline-flex">
+            Vai alla Home
           </Link>
         </div>
       )}

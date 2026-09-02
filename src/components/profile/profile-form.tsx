@@ -27,6 +27,7 @@ type ProfileFormProps = {
   profile: Profile;
   figmaOAuthConfigured: boolean;
   figmaStatus: FigmaConnectionStatus;
+  showOnboardingHint?: boolean;
 };
 
 type FormValues = {
@@ -63,17 +64,38 @@ function sameValues(a: FormValues, b: FormValues): boolean {
   );
 }
 
+function parseSkills(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(/[\n,;]+/)) {
+    const s = part.trim();
+    if (!s) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out;
+}
+
 export function ProfileForm({
   profile,
   figmaOAuthConfigured,
   figmaStatus,
+  showOnboardingHint = false,
 }: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfile, initial);
   const [values, setValues] = useState<FormValues>(() => fromProfile(profile));
   const [saved, setSaved] = useState<FormValues>(() => fromProfile(profile));
+  const [skillDraft, setSkillDraft] = useState("");
+  const [cvEditing, setCvEditing] = useState(
+    () => !fromProfile(profile).cv_fallback_text.trim(),
+  );
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const lastSuccess = useRef(false);
 
   const dirty = !sameValues(values, saved);
+  const skillChips = parseSkills(values.skills);
 
   useEffect(() => {
     if (state.success && !lastSuccess.current) {
@@ -95,25 +117,39 @@ export function ProfileForm({
           : prev.companies_of_interest,
       job_preference: extract.job_preference ?? prev.job_preference,
     }));
+    if (extract.cv_fallback_text) setCvEditing(false);
   }, []);
 
-  const skillChips = values.skills
-    .split(/[\n,;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  function addSkill() {
+    const next = parseSkills(`${values.skills}, ${skillDraft}`);
+    setValues((v) => ({ ...v, skills: next.join(", ") }));
+    setSkillDraft("");
+  }
+
+  function removeSkill(skill: string) {
+    const next = skillChips.filter(
+      (s) => s.toLowerCase() !== skill.toLowerCase(),
+    );
+    setValues((v) => ({ ...v, skills: next.join(", ") }));
+  }
 
   return (
     <div className="space-y-8">
+      {showOnboardingHint ? (
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] px-4 py-4 text-sm leading-relaxed text-[var(--ink)]">
+          <p className="font-semibold">Primo passo</p>
+          <p className="mt-1 text-[var(--muted)]">
+            Carica o incolla il CV e aggiungi le competenze che possiedi già.
+            Poi tornerai in Home per cercare offerte.
+          </p>
+        </div>
+      ) : null}
+
       <CvUpload onExtracted={onExtracted} />
 
-      <FigmaConnectPanel
-        oauthConfigured={figmaOAuthConfigured}
-        status={figmaStatus}
-        hasFigmaCvUrl={Boolean(values.figma_cv_url.trim())}
-        onExtracted={onExtracted}
-      />
-
       <form action={action} className="space-y-8">
+        <input type="hidden" name="skills" value={values.skills} />
+
         <section className="space-y-3">
           <label htmlFor="full_name" className="label-caps">
             Nome completo
@@ -157,52 +193,98 @@ export function ProfileForm({
         </section>
 
         <section className="space-y-3">
-          <label htmlFor="skills" className="label-caps">
-            Competenze
-          </label>
+          <p className="label-caps">Competenze</p>
+          <p className="text-xs text-[var(--muted)]">
+            Solo competenze che possiedi già. Tocca × per rimuovere.
+          </p>
           {skillChips.length > 0 ? (
-            <ul className="flex flex-wrap gap-2" aria-hidden>
+            <ul className="flex flex-wrap gap-2">
               {skillChips.map((skill) => (
-                <li
-                  key={skill}
-                  className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1 text-sm text-[var(--ink)]"
-                >
-                  {skill}
+                <li key={skill}>
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(skill)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--ink)] transition active:bg-[var(--tint)]"
+                    aria-label={`Rimuovi ${skill}`}
+                  >
+                    {skill}
+                    <span aria-hidden className="text-[var(--muted)]">
+                      ×
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
-          ) : null}
-          <textarea
-            id="skills"
-            name="skills"
-            rows={3}
-            value={values.skills}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, skills: e.target.value }))
-            }
-            className="field resize-y"
-            placeholder="React, TypeScript, Figma"
-          />
-          <p className="text-xs text-[var(--muted)]">
-            Separate da virgola. Solo competenze già possedute.
-          </p>
+          ) : (
+            <p className="text-sm text-[var(--muted)]">
+              Nessuna competenza ancora.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={skillDraft}
+              onChange={(e) => setSkillDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSkill();
+                }
+              }}
+              className="field flex-1"
+              placeholder="Es. Python, Teamwork"
+              aria-label="Aggiungi competenza"
+            />
+            <button
+              type="button"
+              className="btn-secondary shrink-0 px-4"
+              onClick={addSkill}
+              disabled={!skillDraft.trim()}
+            >
+              Aggiungi
+            </button>
+          </div>
         </section>
 
         <section className="space-y-3">
-          <label htmlFor="cv_fallback_text" className="label-caps">
-            CV
-          </label>
-          <textarea
-            id="cv_fallback_text"
-            name="cv_fallback_text"
-            rows={8}
-            value={values.cv_fallback_text}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, cv_fallback_text: e.target.value }))
-            }
-            className="field resize-y"
-            placeholder="Incolla qui il tuo CV oppure caricalo sopra..."
-          />
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="cv_fallback_text" className="label-caps">
+              CV
+            </label>
+            {values.cv_fallback_text.trim() ? (
+              <button
+                type="button"
+                className="text-link text-sm"
+                onClick={() => setCvEditing((v) => !v)}
+              >
+                {cvEditing ? "Anteprima" : "Modifica"}
+              </button>
+            ) : null}
+          </div>
+          {cvEditing || !values.cv_fallback_text.trim() ? (
+            <textarea
+              id="cv_fallback_text"
+              name="cv_fallback_text"
+              rows={10}
+              value={values.cv_fallback_text}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, cv_fallback_text: e.target.value }))
+              }
+              className="field resize-y"
+              placeholder="Incolla qui il tuo CV oppure caricalo sopra..."
+            />
+          ) : (
+            <>
+              <input
+                type="hidden"
+                name="cv_fallback_text"
+                value={values.cv_fallback_text}
+              />
+              <div className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm leading-relaxed text-[var(--ink)]">
+                {values.cv_fallback_text}
+              </div>
+            </>
+          )}
         </section>
 
         <section className="space-y-3">
@@ -226,51 +308,81 @@ export function ProfileForm({
         </section>
 
         <section className="space-y-3">
-          <div className="space-y-1">
-            <p className="label-caps">Link Figma (tuoi file)</p>
-            <p className="text-sm text-[var(--muted)]">
-              Ogni utente usa i propri file. Dopo la generazione, «Apri in Figma»
-              copia CV e lettera e apre questi link — nessuna sincronizzazione
-              automatica con un account condiviso.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-3">
-              <label htmlFor="figma_cv_url" className="label-caps">
-                Link Figma CV
-              </label>
-              <input
-                id="figma_cv_url"
-                name="figma_cv_url"
-                type="url"
-                value={values.figma_cv_url}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, figma_cv_url: e.target.value }))
-                }
-                className="field"
-                placeholder="https://www.figma.com/..."
+          <button
+            type="button"
+            className="flex w-full items-center justify-between rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-left"
+            onClick={() => setAdvancedOpen((v) => !v)}
+            aria-expanded={advancedOpen}
+          >
+            <span>
+              <span className="block text-sm font-semibold text-[var(--ink)]">
+                Avanzate · Figma
+              </span>
+              <span className="mt-0.5 block text-xs text-[var(--muted)]">
+                Opzionale: collega i tuoi file per copiare CV e lettera
+              </span>
+            </span>
+            <span aria-hidden className="text-[var(--muted)]">
+              {advancedOpen ? "▴" : "▾"}
+            </span>
+          </button>
+
+          {advancedOpen ? (
+            <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4">
+              <FigmaConnectPanel
+                oauthConfigured={figmaOAuthConfigured}
+                status={figmaStatus}
+                hasFigmaCvUrl={Boolean(values.figma_cv_url.trim())}
+                onExtracted={onExtracted}
               />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="figma_cv_url" className="label-caps">
+                    Link Figma CV
+                  </label>
+                  <input
+                    id="figma_cv_url"
+                    name="figma_cv_url"
+                    type="url"
+                    value={values.figma_cv_url}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, figma_cv_url: e.target.value }))
+                    }
+                    className="field"
+                    placeholder="https://www.figma.com/..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="figma_portfolio_url" className="label-caps">
+                    Link Figma Portfolio
+                  </label>
+                  <input
+                    id="figma_portfolio_url"
+                    name="figma_portfolio_url"
+                    type="url"
+                    value={values.figma_portfolio_url}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        figma_portfolio_url: e.target.value,
+                      }))
+                    }
+                    className="field"
+                    placeholder="https://www.figma.com/..."
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-3">
-              <label htmlFor="figma_portfolio_url" className="label-caps">
-                Link Figma Portfolio
-              </label>
+          ) : (
+            <>
+              <input type="hidden" name="figma_cv_url" value={values.figma_cv_url} />
               <input
-                id="figma_portfolio_url"
+                type="hidden"
                 name="figma_portfolio_url"
-                type="url"
                 value={values.figma_portfolio_url}
-                onChange={(e) =>
-                  setValues((v) => ({
-                    ...v,
-                    figma_portfolio_url: e.target.value,
-                  }))
-                }
-                className="field"
-                placeholder="https://www.figma.com/..."
               />
-            </div>
-          </div>
+            </>
+          )}
         </section>
 
         {state.error ? (

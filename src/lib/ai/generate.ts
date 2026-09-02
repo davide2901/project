@@ -7,6 +7,10 @@ import {
   applicationPackageSchema,
   type ApplicationPackage,
 } from "@/lib/ai/schema";
+import {
+  GENERATION_ERROR_FALLBACK,
+  toUserFacingError,
+} from "@/lib/ai/user-facing-error";
 import { applyPreferenceFilter } from "@/lib/application/preference";
 import type { CvSourceKind } from "@/lib/cv/resolve-source";
 import type { JobPreference } from "@/lib/types/database";
@@ -80,6 +84,34 @@ function parsePackage(text: string): ApplicationPackage {
   return parsed.data;
 }
 
+/** Ricerca azienda senza JSON mime (incompatibile con googleSearch). */
+async function collectCompanyResearchNotes(
+  ai: GoogleGenAI,
+  offerInput: string,
+): Promise<string | null> {
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: `Dall'offerta seguente, identifica l'azienda e raccogli fatti verificabili sul web:
+settore, sede principale, presenza geografica, prodotti/servizi, dimensioni se note, cultura se documentata.
+Se un dato non è reperibile, scrivi "non reperibile".
+Non inventare.
+
+OFFERTA:
+---
+${offerInput.trim().slice(0, 8000)}
+---`,
+      config: {
+        temperature: 0.2,
+        tools: [{ googleSearch: {} }],
+      },
+    });
+    return response.text?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateApplicationPackage(
   input: GenerateInput,
 ): Promise<ApplicationPackage> {
@@ -89,46 +121,40 @@ export async function generateApplicationPackage(
   }
 
   const ai = getClient();
-  const contents = buildUserPrompt(input.offerInput);
   const systemInstruction = buildSystemPrompt(input.profile, {
     cvSourceKind: input.cvSourceKind,
   });
   const schema = applicationPackageJsonSchema as Record<string, unknown>;
 
+  const researchNotes = await collectCompanyResearchNotes(
+    ai,
+    input.offerInput,
+  );
+  const basePrompt = buildUserPrompt(input.offerInput);
+  const contents = researchNotes
+    ? `${basePrompt}
+
+---
+NOTE RICERCA AZIENDA (fonte web; usa solo questi fatti o "non reperibile"):
+${researchNotes}
+---`
+    : basePrompt;
+
   try {
+    // Mai combinare googleSearch + responseMimeType application/json
     const response = await ai.models.generateContent({
       model: MODEL,
       contents,
       config: {
         systemInstruction,
         temperature: 0.4,
-        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseJsonSchema: schema,
       },
     });
     const pkg = parsePackage(response.text ?? "");
     return applyPreferenceFilter(pkg, input.profile.job_preference);
-  } catch (firstError) {
-    try {
-      const response = await ai.models.generateContent({
-        model: MODEL,
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.4,
-          responseMimeType: "application/json",
-          responseJsonSchema: schema,
-        },
-      });
-      const pkg = parsePackage(response.text ?? "");
-      return applyPreferenceFilter(pkg, input.profile.job_preference);
-    } catch {
-      const message =
-        firstError instanceof Error
-          ? firstError.message
-          : "Errore sconosciuto nella generazione.";
-      throw new Error(message);
-    }
+  } catch (err) {
+    throw new Error(toUserFacingError(err, GENERATION_ERROR_FALLBACK));
   }
 }

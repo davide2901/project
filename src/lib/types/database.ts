@@ -2,7 +2,15 @@ import type { ApplicationPackage } from "@/lib/ai/schema";
 
 export type JobPreference = "lavoro" | "stage" | "entrambi";
 
-export type ApplicationStatus = "draft" | "ready" | "sent" | "archived";
+/** Workflow utente. draft/archived = legacy (mappati in UI). */
+export type ApplicationStatus =
+  | "ready"
+  | "sent"
+  | "waiting"
+  | "interview"
+  | "closed"
+  | "draft"
+  | "archived";
 
 export type ApplicationPositionType = ApplicationPackage["position_type"];
 

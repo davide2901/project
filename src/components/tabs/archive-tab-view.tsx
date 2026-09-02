@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { SoftDaylightSpot } from "@/components/brand/soft-daylight-spot";
 import {
+  APPLICATION_STATUS_OPTIONS,
   companyInitials,
   labelPosition,
   labelStatus,
+  normalizeStatus,
 } from "@/lib/application/labels";
+import type { ApplicationStatus } from "@/lib/types/database";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
 
 function formatDate(iso: string) {
@@ -18,8 +22,16 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
+type Filter = "all" | ApplicationStatus;
+
 export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
   const { items, error } = data;
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return items;
+    return items.filter((item) => normalizeStatus(item.status) === filter);
+  }, [items, filter]);
 
   return (
     <div className="space-y-6">
@@ -28,7 +40,7 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
           Archivio
         </h1>
         <p className="text-sm text-[var(--muted)]">
-          Le tue candidature, in un unico posto.
+          I tuoi documenti di candidatura, pronti da usare.
         </p>
       </header>
 
@@ -37,25 +49,50 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
           className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)]"
           role="alert"
         >
-          Impossibile caricare l&apos;archivio ({error}).
+          Impossibile caricare l&apos;archivio. Riprova più tardi.
         </p>
       ) : null}
 
       {!error && items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-4 py-10 text-center">
-          <SoftDaylightSpot title="Nessuna candidatura ancora. Generane una su misura." />
-          <Link
-            href="/candidatura/nuova"
-            className="mt-6 inline-flex btn-primary"
-          >
-            Nuova candidatura
+          <SoftDaylightSpot title="Nessuna candidatura ancora. Generane una su misura dalla Home." />
+          <Link href="/home" className="mt-6 inline-flex btn-primary">
+            Vai alla Home
           </Link>
         </div>
       ) : null}
 
       {items.length > 0 ? (
+        <div
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+          role="toolbar"
+          aria-label="Filtra per stato"
+        >
+          <FilterChip
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+            label="Tutte"
+          />
+          {APPLICATION_STATUS_OPTIONS.map((opt) => (
+            <FilterChip
+              key={opt.value}
+              active={filter === opt.value}
+              onClick={() => setFilter(opt.value)}
+              label={opt.label}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {items.length > 0 && filtered.length === 0 ? (
+        <p className="text-sm text-[var(--muted)]">
+          Nessuna candidatura con questo stato.
+        </p>
+      ) : null}
+
+      {filtered.length > 0 ? (
         <ul className="space-y-3">
-          {items.map((item) => (
+          {filtered.map((item) => (
             <li key={item.id}>
               <Link
                 href={`/archivio/${item.id}`}
@@ -102,5 +139,29 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
         </ul>
       ) : null}
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+        active
+          ? "border-[var(--btn)] bg-[var(--btn)] text-white"
+          : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

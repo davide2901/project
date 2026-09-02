@@ -19,14 +19,15 @@ export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
   return `Sei un assistente di job discovery per candidature oneste.
 
 REGOLE:
-1. Usa Google Search per trovare offerte RECENTI allineate al profilo.
-2. NON inventare URL: source_url solo se trovato nella ricerca; altrimenti null.
+1. Se sotto trovi NOTE DALLA RICERCA WEB, usale come fonte primaria: non inventare offerte assenti da quelle note.
+2. NON inventare URL: source_url solo se presente nelle note o nell'offerta; altrimenti null.
 3. Non inventare competenze del candidato: match_reason deve basarsi solo su skills/CV forniti.
 4. Massimo 8 offerte, preferibilmente 4–6 di buona qualità.
 5. ${preferenceHint}
 6. Se companies_of_interest è valorizzato, privilegia offerte di quelle aziende o simili.
 7. Classifica position_type correttamente (lavoro | stage | non_chiaro).
-8. Rispondi SOLO con JSON conforme allo schema.`;
+8. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
+9. Rispondi SOLO con JSON conforme allo schema.`;
 }
 
 export function buildDiscoveryUserPrompt(profile: DiscoveryProfile): string {

@@ -10,6 +10,10 @@ import {
   type DiscoveryResult,
 } from "@/lib/ai/discovery-schema";
 import { isAiMockEnabled, mockDiscoverOffers } from "@/lib/ai/mock";
+import {
+  DISCOVERY_ERROR_FALLBACK,
+  toUserFacingError,
+} from "@/lib/ai/user-facing-error";
 import type { JobPreference } from "@/lib/types/database";
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
@@ -85,6 +89,46 @@ function preferenceAllows(
   return true;
 }
 
+/**
+ * Google Search non può coesistere con responseMimeType JSON.
+ * Prima raccogliamo note di ricerca (testo), poi strutturiamo in JSON.
+ */
+async function collectSearchNotes(
+  ai: GoogleGenAI,
+  profile: DiscoveryProfileInput,
+): Promise<string | null> {
+  const skills = profile.skills.slice(0, 12).join(", ") || "non specificate";
+  const companies =
+    profile.companies_of_interest.slice(0, 8).join(", ") || "nessuna";
+  const pref =
+    profile.job_preference === "lavoro"
+      ? "solo lavoro (no stage)"
+      : profile.job_preference === "stage"
+        ? "solo stage/tirocinio/internship"
+        : "lavoro o stage";
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: `Cerca offerte di lavoro reali in Italia (o remote IT) adatte a questo profilo.
+Preferenza: ${pref}.
+Competenze: ${skills}.
+Aziende di interesse: ${companies}.
+
+Elenca fino a 8 offerte trovate sul web con: azienda, ruolo, luogo, tipo (lavoro/stage), URL se disponibile, breve descrizione, perché matcha.
+Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
+      config: {
+        temperature: 0.35,
+        tools: [{ googleSearch: {} }],
+      },
+    });
+    const text = response.text?.trim();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function discoverOffersForProfile(
   profile: DiscoveryProfileInput,
 ): Promise<DiscoveryResult> {
@@ -99,58 +143,47 @@ export async function discoverOffersForProfile(
   }
 
   const ai = getClient();
-  const contents = buildDiscoveryUserPrompt(profile);
   const systemInstruction = buildDiscoverySystemPrompt(profile);
   const schema = discoveryResultJsonSchema as Record<string, unknown>;
 
+  const searchNotes = await collectSearchNotes(ai, profile);
+  const basePrompt = buildDiscoveryUserPrompt(profile);
+  const contents = searchNotes
+    ? `${basePrompt}
+
+---
+NOTE DALLA RICERCA WEB (usa queste come fonte primaria; non inventare offerte non citate):
+${searchNotes}
+---`
+    : basePrompt;
+
   try {
+    // Mai combinare googleSearch + responseMimeType application/json
     const response = await ai.models.generateContent({
       model: MODEL,
       contents,
       config: {
         systemInstruction,
         temperature: 0.35,
-        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseJsonSchema: schema,
       },
     });
     const result = parseDiscovery(response.text ?? "");
+    const notes = [...result.search_notes];
+    if (!searchNotes) {
+      notes.push(
+        "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",
+      );
+    }
     return {
       ...result,
       offers: result.offers.filter((o) =>
         preferenceAllows(o.position_type, profile.job_preference),
       ),
+      search_notes: notes,
     };
-  } catch (firstError) {
-    try {
-      const response = await ai.models.generateContent({
-        model: MODEL,
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.35,
-          responseMimeType: "application/json",
-          responseJsonSchema: schema,
-        },
-      });
-      const result = parseDiscovery(response.text ?? "");
-      return {
-        ...result,
-        offers: result.offers.filter((o) =>
-          preferenceAllows(o.position_type, profile.job_preference),
-        ),
-        search_notes: [
-          ...result.search_notes,
-          "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",
-        ],
-      };
-    } catch {
-      const message =
-        firstError instanceof Error
-          ? firstError.message
-          : "Errore sconosciuto in discovery.";
-      throw new Error(message);
-    }
+  } catch (err) {
+    throw new Error(toUserFacingError(err, DISCOVERY_ERROR_FALLBACK));
   }
 }

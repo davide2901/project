@@ -159,6 +159,8 @@ export function NewApplicationForm({ mockMode = false }: Props) {
       {result ? (
         <ApplicationResult
           data={result}
+          applicationId={applicationId ?? undefined}
+          initialStatus="ready"
           cvSourceLabel={cvSourceLabel ?? undefined}
           figmaCvUrl={figmaCvUrl}
           figmaPortfolioUrl={figmaPortfolioUrl}
