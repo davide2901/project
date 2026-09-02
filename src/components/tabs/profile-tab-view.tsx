@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import {
+  buildOnboardingSteps,
+  OnboardingProgress,
+} from "@/components/onboarding/onboarding-progress";
 import { ProfileForm } from "@/components/profile/profile-form";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
 
@@ -33,6 +37,12 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
     data.profile.skills.length > 0 || data.profile.cv_fallback_text?.trim(),
   );
 
+  const steps = buildOnboardingSteps({
+    profileReady,
+    hasOffers: false,
+    hasApplications: false,
+  });
+
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -42,11 +52,11 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
         <p className="max-w-prose text-sm text-[var(--muted)]">
           {profileReady ? (
             <>
-              Profilo pronto. Torna in{" "}
+              Qui aggiorni CV e competenze. Quando sei pronto, torna in{" "}
               <Link href="/home" className="text-link">
                 Home
               </Link>{" "}
-              per cercare offerte o genera una candidatura.
+              per cercare offerte.
             </>
           ) : (
             <>
@@ -56,6 +66,11 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
           )}
         </p>
       </header>
+
+      {!profileReady ? (
+        <OnboardingProgress steps={steps} compact />
+      ) : null}
+
       <Suspense fallback={null}>
         <ProfileForm
           profile={data.profile}

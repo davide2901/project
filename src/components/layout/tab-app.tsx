@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -28,6 +29,7 @@ type TabNavContextValue = {
   navigateTab: (tab: TabId) => void;
   isTabMode: boolean;
   bootstrap: TabsBootstrap;
+  refreshTabs: () => void;
 };
 
 const TabNavContext = createContext<TabNavContextValue | null>(null);
@@ -40,10 +42,6 @@ export function useTabNav() {
   return ctx;
 }
 
-/**
- * Aggiorna l'URL senza soft-navigation Next (niente fetch RSC).
- * Con `__NA: true` il patch di Next salta ACTION_RESTORE.
- */
 function pushTabUrl(href: string) {
   const prev =
     window.history.state && typeof window.history.state === "object"
@@ -53,7 +51,7 @@ function pushTabUrl(href: string) {
 }
 
 export function TabAppProvider({
-  bootstrap,
+  bootstrap: bootstrapProp,
   children,
 }: {
   bootstrap: TabsBootstrap;
@@ -62,14 +60,28 @@ export function TabAppProvider({
   const pathname = usePathname();
   const router = useRouter();
   const [tab, setTab] = useState<TabId>(() => pathToTab(pathname) ?? "home");
-  /** Path “logico” delle tab: può divergere da usePathname dopo pushState senza restore. */
   const [shellPath, setShellPath] = useState(pathname);
+  /** Copia locale aggiornata quando il server invia nuovi dati (router.refresh). */
+  const [bootstrap, setBootstrap] = useState(bootstrapProp);
+  const prevPathRef = useRef(pathname);
+
+  useEffect(() => {
+    setBootstrap(bootstrapProp);
+  }, [bootstrapProp]);
 
   useEffect(() => {
     setShellPath(pathname);
     const fromPath = pathToTab(pathname);
     if (fromPath) setTab(fromPath);
-  }, [pathname]);
+
+    const wasOutsideTabs = !isMainTabPath(prevPathRef.current);
+    const nowOnTab = isMainTabPath(pathname);
+    prevPathRef.current = pathname;
+    // Solo quando si torna da dettaglio/account a una tab: aggiorna i dati
+    if (wasOutsideTabs && nowOnTab) {
+      router.refresh();
+    }
+  }, [pathname, router]);
 
   useEffect(() => {
     function onPopState() {
@@ -77,12 +89,17 @@ export function TabAppProvider({
       setShellPath(p);
       const fromPath = pathToTab(p);
       if (fromPath) setTab(fromPath);
+      if (isMainTabPath(p)) router.refresh();
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [router]);
 
   const isTabMode = isMainTabPath(shellPath);
+
+  const refreshTabs = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   const navigateTab = useCallback(
     (next: TabId) => {
@@ -92,6 +109,7 @@ export function TabAppProvider({
       if (isMainTabPath(window.location.pathname)) {
         setShellPath(href);
         pushTabUrl(href);
+        router.refresh();
         return;
       }
 
@@ -101,8 +119,8 @@ export function TabAppProvider({
   );
 
   const value = useMemo(
-    () => ({ tab, navigateTab, isTabMode, bootstrap }),
-    [tab, navigateTab, isTabMode, bootstrap],
+    () => ({ tab, navigateTab, isTabMode, bootstrap, refreshTabs }),
+    [tab, navigateTab, isTabMode, bootstrap, refreshTabs],
   );
 
   return (
@@ -110,7 +128,6 @@ export function TabAppProvider({
   );
 }
 
-/** Contenuto: tab keep-alive oppure pagina Next (dettaglio / nuova). */
 export function TabOutlet({ children }: { children: ReactNode }) {
   const { tab, isTabMode, bootstrap } = useTabNav();
 

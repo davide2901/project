@@ -49,9 +49,12 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
         [
           res.inserted > 0
             ? `Trovate ${res.inserted} nuove offerte.`
-            : "Nessuna nuova offerta (già presenti o nessun match).",
+            : "Nessuna nuova offerta da aggiungere (già presenti o nessun match).",
           res.removedDuplicates > 0
             ? `Rimossi ${res.removedDuplicates} duplicati.`
+            : null,
+          res.notes?.length && res.inserted === 0
+            ? res.notes.slice(0, 1).join(" ")
             : null,
         ]
           .filter(Boolean)

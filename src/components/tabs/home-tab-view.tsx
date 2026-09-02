@@ -1,12 +1,21 @@
 "use client";
 
-import { SoftDaylightSpot } from "@/components/brand/soft-daylight-spot";
+import {
+  buildOnboardingSteps,
+  OnboardingProgress,
+} from "@/components/onboarding/onboarding-progress";
 import { DiscoveryPanel } from "@/components/discovery/discovery-panel";
 import { ExternalAppLink, TabLink } from "@/components/layout/tab-link";
 import type { TabsBootstrap } from "@/lib/tabs/bootstrap";
 
 export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
   const needsProfile = !data.profileReady;
+  const steps = buildOnboardingSteps({
+    profileReady: data.profileReady,
+    hasOffers: data.offers.length > 0,
+    hasApplications: (data.count ?? 0) > 0,
+  });
+  const showGuide = !steps.every((s) => s.done);
 
   return (
     <div className="space-y-8">
@@ -30,14 +39,7 @@ export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
         </p>
       </header>
 
-      {needsProfile ? (
-        <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-8 text-center shadow-[var(--shadow)]">
-          <SoftDaylightSpot title="Inizia dal profilo: CV o competenze, così possiamo proporti offerte adatte." />
-          <TabLink tab="profilo" className="btn-primary mt-5 inline-flex">
-            Completa il profilo
-          </TabLink>
-        </div>
-      ) : null}
+      {showGuide ? <OnboardingProgress steps={steps} /> : null}
 
       {!needsProfile ? (
         <DiscoveryPanel offers={data.offers} profileReady={data.profileReady} />

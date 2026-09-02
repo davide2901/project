@@ -5,6 +5,7 @@ import {
   buildDiscoveryUserPrompt,
 } from "@/lib/ai/discovery-prompts";
 import {
+  discoveredOfferItemSchema,
   discoveryResultJsonSchema,
   discoveryResultSchema,
   type DiscoveryResult,
@@ -52,7 +53,7 @@ function tryParseJsonObject(text: string): unknown {
 function parseDiscovery(text: string): DiscoveryResult {
   const trimmed = text.trim();
   if (!trimmed) {
-    throw new Error("Gemini non ha restituito offerte. Riprova.");
+    return { offers: [], search_notes: ["Nessun risultato dalla ricerca."] };
   }
 
   let payload: unknown;
@@ -63,20 +64,46 @@ function parseDiscovery(text: string): DiscoveryResult {
   }
 
   if (!payload) {
-    throw new Error("Gemini non ha restituito un JSON valido. Riprova.");
+    return {
+      offers: [],
+      search_notes: ["Risposta non strutturata: nessun'offerta estratta."],
+    };
   }
 
   const parsed = discoveryResultSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(
-      `Output discovery non valido: ${parsed.error.issues
-        .slice(0, 3)
-        .map((i) => i.message)
-        .join("; ")}`,
-    );
+    // Tollerante: se c'è un array offers grezzo, prova a filtrare item validi
+    const raw = payload as { offers?: unknown; search_notes?: unknown };
+    if (Array.isArray(raw.offers)) {
+      const offers = raw.offers
+        .map((item) => discoveredOfferItemSchemaSafe(item))
+        .filter(Boolean) as DiscoveryResult["offers"];
+      return {
+        offers,
+        search_notes: Array.isArray(raw.search_notes)
+          ? (raw.search_notes as string[]).map(String)
+          : ["Alcune offerte non erano valide ed sono state scartate."],
+      };
+    }
+    return {
+      offers: [],
+      search_notes: [
+        `Output discovery incompleto: ${parsed.error.issues
+          .slice(0, 2)
+          .map((i) => i.message)
+          .join("; ")}`,
+      ],
+    };
   }
 
   return parsed.data;
+}
+
+function discoveredOfferItemSchemaSafe(
+  item: unknown,
+): DiscoveryResult["offers"][number] | null {
+  const r = discoveredOfferItemSchema.safeParse(item);
+  return r.success ? r.data : null;
 }
 
 function preferenceAllows(
@@ -118,8 +145,7 @@ Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
         tools: [{ googleSearch: {} }],
       },
     });
-    const text = response.text?.trim();
-    return text || null;
+    return response.text?.trim() || null;
   } catch {
     return null;
   }
@@ -144,12 +170,12 @@ async function generateDiscoveryJson(
     });
     return parseDiscovery(response.text ?? "");
   } catch {
-    // Fallback senza responseJsonSchema (alcuni modelli lo rifiutano)
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: `${contents}
 
-Rispondi SOLO con JSON valido conforme allo schema discovery (offers + search_notes).`,
+Rispondi SOLO con JSON valido: { "offers": [...], "search_notes": [...] }.
+offers può essere [].`,
       config: {
         systemInstruction,
         temperature: 0.35,
@@ -173,31 +199,31 @@ export async function discoverOffersForProfile(
     };
   }
 
-  const ai = getClient();
-  const systemInstruction = buildDiscoverySystemPrompt(profile);
-  const schema = discoveryResultJsonSchema as Record<string, unknown>;
+  try {
+    const ai = getClient();
+    const systemInstruction = buildDiscoverySystemPrompt(profile);
+    const schema = discoveryResultJsonSchema as Record<string, unknown>;
 
-  const searchNotes = await collectSearchNotes(ai, profile);
-  const basePrompt = buildDiscoveryUserPrompt(profile);
-  const contents = searchNotes
-    ? `${basePrompt}
+    const searchNotes = await collectSearchNotes(ai, profile);
+    const basePrompt = buildDiscoveryUserPrompt(profile);
+    const contents = searchNotes
+      ? `${basePrompt}
 
 ---
-NOTE DALLA RICERCA WEB (usa queste come fonte primaria; non inventare offerte non citate):
+NOTE DALLA RICERCA WEB (fonte primaria; non inventare offerte assenti da qui):
 ${searchNotes}
 ---`
-    : `${basePrompt}
+      : `${basePrompt}
 
-Nota: la ricerca web non ha restituito note. Proponi solo offerte plausibili e recenti per il profilo, senza inventare URL; se non sei sicuro metti source_url null e spiega in search_notes.`;
+Nota: ricerca web non disponibile. Restituisci offers: [] e spiega in search_notes, oppure solo offerte di cui sei molto sicuro senza inventare URL.`;
 
-  try {
     const result = await generateDiscoveryJson(
       ai,
       contents,
       systemInstruction,
       schema,
     );
-    const notes = [...result.search_notes];
+    const notes = [...(result.search_notes ?? [])];
     if (!searchNotes) {
       notes.push(
         "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",

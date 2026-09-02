@@ -149,7 +149,10 @@ export function ProfileForm({
         </div>
       ) : null}
 
-      <CvUpload onExtracted={onExtracted} />
+      <CvUpload
+        onExtracted={onExtracted}
+        hasExistingCv={Boolean(values.cv_fallback_text.trim())}
+      />
 
       <form action={action} className="space-y-8">
         <input type="hidden" name="skills" value={values.skills} />

@@ -12,9 +12,11 @@ const initial: ParseCvState = { error: null, extract: null };
 
 type CvUploadProps = {
   onExtracted: (extract: CvExtract) => void;
+  /** Se il profilo ha già un CV: UI più compatta, non sembra “incompleto”. */
+  hasExistingCv?: boolean;
 };
 
-export function CvUpload({ onExtracted }: CvUploadProps) {
+export function CvUpload({ onExtracted, hasExistingCv = false }: CvUploadProps) {
   const [state, action, pending] = useActionState(parseCvUpload, initial);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastExtract = useRef<CvExtract | null>(null);
@@ -27,6 +29,28 @@ export function CvUpload({ onExtracted }: CvUploadProps) {
     }
   }, [state.extract, onExtracted]);
 
+  if (hasExistingCv) {
+    return (
+      <details className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 shadow-[var(--shadow)]">
+        <summary className="cursor-pointer text-sm font-semibold text-[var(--ink)]">
+          Aggiorna CV da file (opzionale)
+        </summary>
+        <div className="mt-3 space-y-3 border-t border-[var(--line)] pt-3">
+          <p className="text-sm text-[var(--muted)]">
+            Hai già un CV nel profilo. Carica un nuovo file solo se vuoi
+            sostituirlo: rivedi i campi e premi Salva profilo.
+          </p>
+          <UploadForm
+            action={action}
+            pending={pending}
+            inputRef={inputRef}
+            state={state}
+          />
+        </div>
+      </details>
+    );
+  }
+
   return (
     <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow)]">
       <div className="space-y-1">
@@ -36,7 +60,29 @@ export function CvUpload({ onExtracted }: CvUploadProps) {
           Controlla sempre e premi Salva profilo.
         </p>
       </div>
+      <UploadForm
+        action={action}
+        pending={pending}
+        inputRef={inputRef}
+        state={state}
+      />
+    </section>
+  );
+}
 
+function UploadForm({
+  action,
+  pending,
+  inputRef,
+  state,
+}: {
+  action: (payload: FormData) => void;
+  pending: boolean;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  state: ParseCvState;
+}) {
+  return (
+    <>
       <form action={action} className="space-y-3">
         <input
           ref={inputRef}
@@ -71,6 +117,6 @@ export function CvUpload({ onExtracted }: CvUploadProps) {
           {state.extract.notes ? ` (${state.extract.notes})` : null}
         </p>
       ) : null}
-    </section>
+    </>
   );
 }

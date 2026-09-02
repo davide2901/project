@@ -6,6 +6,7 @@
  * - extract-cv.ts / cv-extract-schema.ts → OCR/estrazione profilo da PDF/DOCX
  */
 
+export { enforcePackageHonesty, skillSupportedByProfile } from "@/lib/ai/enforce-honesty";
 export { discoverOffersForProfile } from "@/lib/ai/discover";
 export { extractCvFromDocument } from "@/lib/ai/extract-cv";
 export { generateApplicationPackage } from "@/lib/ai/generate";

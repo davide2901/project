@@ -11,6 +11,7 @@ import {
   GENERATION_ERROR_FALLBACK,
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
+import { enforcePackageHonesty } from "@/lib/ai/enforce-honesty";
 import { applyPreferenceFilter } from "@/lib/application/preference";
 import type { CvSourceKind } from "@/lib/cv/resolve-source";
 import type { JobPreference } from "@/lib/types/database";
@@ -117,7 +118,10 @@ export async function generateApplicationPackage(
 ): Promise<ApplicationPackage> {
   if (isAiMockEnabled()) {
     const mocked = await mockGenerateApplicationPackage(input.offerInput);
-    return applyPreferenceFilter(mocked, input.profile.job_preference);
+    return applyPreferenceFilter(
+      enforcePackageHonesty(mocked, input.profile),
+      input.profile.job_preference,
+    );
   }
 
   const ai = getClient();
@@ -153,8 +157,29 @@ ${researchNotes}
       },
     });
     const pkg = parsePackage(response.text ?? "");
-    return applyPreferenceFilter(pkg, input.profile.job_preference);
+    return applyPreferenceFilter(
+      enforcePackageHonesty(pkg, input.profile),
+      input.profile.job_preference,
+    );
   } catch (err) {
-    throw new Error(toUserFacingError(err, GENERATION_ERROR_FALLBACK));
+    // Retry senza schema stretto
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents: `${contents}\n\nRispondi SOLO con JSON valido del pacchetto candidatura.`,
+        config: {
+          systemInstruction,
+          temperature: 0.35,
+          responseMimeType: "application/json",
+        },
+      });
+      const pkg = parsePackage(response.text ?? "");
+      return applyPreferenceFilter(
+        enforcePackageHonesty(pkg, input.profile),
+        input.profile.job_preference,
+      );
+    } catch {
+      throw new Error(toUserFacingError(err, GENERATION_ERROR_FALLBACK));
+    }
   }
 }
