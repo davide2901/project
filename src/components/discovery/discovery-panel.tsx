@@ -8,6 +8,7 @@ import {
   startApplicationFromOffer,
 } from "@/app/actions/discovery";
 import type { RunDiscoveryResult } from "@/app/actions/discovery";
+import { OfferExternalLink } from "@/components/discovery/offer-external-link";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import { TabLink } from "@/components/layout/tab-link";
 import { labelPosition } from "@/lib/application/labels";
@@ -204,9 +205,11 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                   {offer.location ? ` · ${offer.location}` : ""}
                 </p>
               </div>
-              <span aria-hidden className="mt-1 text-[var(--muted)]">
-                ›
-              </span>
+              <OfferExternalLink
+                offer={offer}
+                variant="card"
+                stopPropagation
+              />
             </button>
           </li>
         ))}
@@ -265,16 +268,7 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                 {openOffer.match_reason}
               </p>
             ) : null}
-            {openOffer.source_url ? (
-              <a
-                href={openOffer.source_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-link inline-flex min-h-10 items-center text-sm"
-              >
-                Apri fonte
-              </a>
-            ) : null}
+            <OfferExternalLink offer={openOffer} variant="detail" />
           </div>
         ) : null}
       </OverlaySheet>

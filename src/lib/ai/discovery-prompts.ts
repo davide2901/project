@@ -36,7 +36,7 @@ export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
 
 REGOLE:
 1. Se sotto trovi NOTE DALLA RICERCA WEB, usale come fonte primaria: non inventare offerte assenti da quelle note.
-2. NON inventare URL: source_url solo se presente nelle note o nell'offerta; altrimenti null.
+2. source_url: includi l'URL dell'annuncio o della pagina careers se lo trovi nella ricerca; NON inventare URL. Se non c'è un link verificabile, null.
 3. Non inventare competenze del candidato: match_reason deve basarsi solo su skills/CV forniti.
 4. Massimo 12 offerte, preferibilmente 6–10 di buona qualità.
 5. ${preferenceHint}

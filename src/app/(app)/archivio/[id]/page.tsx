@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ApplicationOfferLink } from "@/components/application/application-offer-link";
 import { ApplicationResult } from "@/components/application/application-result";
 import { DeleteApplicationButton } from "@/components/application/delete-application-button";
 import { applicationPackageSchema } from "@/lib/ai/schema";
@@ -68,6 +69,12 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         </Link>
         <DeleteApplicationButton id={row.id} />
       </div>
+
+      <ApplicationOfferLink
+        companyName={row.company_name}
+        roleTitle={row.role_title}
+        offerSource={row.offer_source}
+      />
 
       <ApplicationResult
         data={pkg.data}

@@ -9,6 +9,7 @@ import {
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
 import { isDuplicateOffer } from "@/lib/discovery/dedupe";
+import { resolveOfferLink } from "@/lib/discovery/offer-links";
 import { createClient } from "@/lib/supabase/server";
 import type { DiscoveredOffer, Profile } from "@/lib/types/database";
 
@@ -256,12 +257,15 @@ export async function startApplicationFromOffer(
   if (!offer) return { ok: false, error: "Offerta non trovata." };
 
   const row = offer as DiscoveredOffer;
+  const link = resolveOfferLink(row);
   const offerText = [
     `${row.company_name} — ${row.role_title}`,
     row.location ? `Luogo: ${row.location}` : null,
     `Tipo: ${row.position_type}`,
     row.snippet,
-    row.source_url ? `Link: ${row.source_url}` : null,
+    link.kind === "direct"
+      ? `Link: ${link.href}`
+      : `Cerca online: ${link.href}`,
     row.match_reason ? `Perché per te: ${row.match_reason}` : null,
   ]
     .filter(Boolean)

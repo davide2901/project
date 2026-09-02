@@ -24,6 +24,10 @@ import {
   mergeDiscoveryOffers,
   type DiscoveryAngle,
 } from "@/lib/discovery/multi-search";
+import {
+  enrichOffersWithUrls,
+  type GroundingWebRef,
+} from "@/lib/discovery/offer-links";
 import type { JobPreference } from "@/lib/types/database";
 
 export type DiscoveryOutcome = DiscoveryResult & {
@@ -69,6 +73,22 @@ function logDiscovery(
       ...extra,
     }),
   );
+}
+
+function extractGroundingWebRefs(response: {
+  candidates?: Array<{
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: GroundingWebRef }>;
+    };
+  }>;
+}): GroundingWebRef[] {
+  const out: GroundingWebRef[] = [];
+  for (const candidate of response.candidates ?? []) {
+    for (const chunk of candidate.groundingMetadata?.groundingChunks ?? []) {
+      if (chunk.web?.uri) out.push(chunk.web);
+    }
+  }
+  return out;
 }
 
 function getClient() {
@@ -291,7 +311,8 @@ ANGOLO DI RICERCA: ${angle.label}
 ${angle.focus}
 
 Dopo la ricerca, restituisci SOLO JSON:
-{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":null,"snippet":"...","match_reason":"..."}],"search_notes":["..."]}
+{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":"https://...","snippet":"...","match_reason":"..."}],"search_notes":["..."]}
+source_url = URL dell'annuncio o pagina careers se trovato nella ricerca; altrimenti null.
 Massimo ${OFFERS_PER_ANGLE} offerte NUOVE per questo angolo.`;
 
   const t0 = Date.now();
@@ -304,18 +325,25 @@ Massimo ${OFFERS_PER_ANGLE} offerte NUOVE per questo angolo.`;
       tools: [{ googleSearch: {} }],
     },
   });
+  const groundingUrls = extractGroundingWebRefs(response);
   const parsed = parseDiscovery(response.text ?? "");
+  const enriched = enrichOffersWithUrls(parsed.offers, {
+    text: response.text ?? "",
+    groundingUrls,
+  });
   logDiscovery("angle_ok", {
     angle: angle.id,
     ms: Date.now() - t0,
-    offers: parsed.offers.length,
+    offers: enriched.length,
+    urls: enriched.filter((o) => o.source_url).length,
+    grounding: groundingUrls.length,
     chars: response.text?.length ?? 0,
   });
   return {
     ...parsed,
-    offers: parsed.offers.slice(0, OFFERS_PER_ANGLE),
+    offers: enriched.slice(0, OFFERS_PER_ANGLE),
     search_notes: [
-      `Angolo «${angle.label}»: ${parsed.offers.length} offerte.`,
+      `Angolo «${angle.label}»: ${enriched.length} offerte.`,
       ...(parsed.search_notes ?? []),
     ],
   };
@@ -468,6 +496,9 @@ Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spieg
     systemInstruction,
     schema,
   );
+  const enriched = enrichOffersWithUrls(result.offers, {
+    text: searchNotes ?? contents,
+  });
   const notes = [...(result.search_notes ?? [])];
   if (!searchNotes) {
     notes.push(
@@ -480,7 +511,7 @@ Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spieg
   }
   return {
     ...result,
-    offers: result.offers.slice(0, DISCOVERY_OFFER_CAP),
+    offers: enriched.slice(0, DISCOVERY_OFFER_CAP),
     search_notes: notes,
   };
 }
@@ -611,7 +642,9 @@ export async function discoverOffersForProfile(
     }
 
     const filtered: DiscoveryOutcome = {
-      offers: offers.slice(0, DISCOVERY_OFFER_CAP),
+      offers: enrichOffersWithUrls(offers.slice(0, DISCOVERY_OFFER_CAP), {
+        text: notes.join("\n"),
+      }),
       search_notes: notes,
       degraded: result.degraded,
     };
