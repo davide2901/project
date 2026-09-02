@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   open: boolean;
@@ -13,6 +14,11 @@ type Props = {
 export function OverlaySheet({ open, title, onClose, children, footer }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -29,9 +35,9 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
       <button
         type="button"
@@ -43,7 +49,7 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-[81] flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] sm:rounded-2xl"
+        className="relative z-[81] flex max-h-[88dvh] w-full flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] sm:max-w-lg sm:rounded-2xl"
         style={{
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
         }}
@@ -70,6 +76,7 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
           <div className="border-t border-[var(--line)] px-4 py-3">{footer}</div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

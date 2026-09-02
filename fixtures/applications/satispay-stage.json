@@ -37,6 +37,29 @@
       "Dettagli retributivi dello stage non reperibili dall'annuncio campione"
     ]
   },
+  "european_cv": {
+    "full_name": "Davide Test",
+    "email": null,
+    "phone": null,
+    "location": null,
+    "summary": "Interesse per stage su stack React + TypeScript + Node.js. Esperienza su web app con Next.js/Supabase e integrazione API. Obiettivo: crescere con mentorship su prodotto fintech.",
+    "work_experience": [
+      {
+        "period": "2024",
+        "role": "Sviluppatore web",
+        "employer": "Progetti formativi",
+        "location": null,
+        "highlights": [
+          "Web app con Next.js, Supabase e API REST",
+          "Stack React, TypeScript e Node.js"
+        ]
+      }
+    ],
+    "education": [],
+    "skills": ["React", "TypeScript", "Node.js", "Git", "Tailwind CSS"],
+    "languages": [],
+    "additional": []
+  },
   "optimized_cv_text": "Davide Test — Junior Full Stack\n\nInteresse per stage su stack React + TypeScript + Node.js. Esperienza su web app con Next.js/Supabase e integrazione API.\nCompetenze: React, TypeScript, Node.js, Git, Tailwind CSS.\nObiettivo: crescere con mentorship su prodotto fintech.",
   "cover_letter": "Gentile team Satispay,\n\nsono interessato allo stage Junior Full Stack. Porto basi solide di React e TypeScript e voglia di imparare su un prodotto reale, con attenzione a qualità e collaborazione.\n\nCordiali saluti,\nDavide Test",
   "email_draft": {

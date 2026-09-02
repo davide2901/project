@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { europeanCvSchema } from "@/lib/cv/european-cv-schema";
+import { europeanCvJsonSchema } from "@/lib/cv/european-cv-schema";
+
 /**
  * Schema JSON di output per la generazione candidatura (Fase 1).
  * Derivato dai requisiti del progetto; allineabile al prototipo HTML
@@ -40,10 +43,15 @@ export const applicationPackageSchema = z.object({
       .array(z.string())
       .describe("Cosa non è stato possibile verificare"),
   }),
+  european_cv: europeanCvSchema
+    .optional()
+    .describe(
+      "CV europeo strutturato per template PDF: sezioni, date, bullet. Solo fatti dal CV originale.",
+    ),
   optimized_cv_text: z
     .string()
     .describe(
-      "CV in formato europeo italiano: parti dal CV originale, adatta all'offerta (riordina sezioni/priorità, evidenzia skill pertinenti). Niente competenze inventate. Sezioni tipiche: Informazioni personali, Sintesi, Esperienza, Istruzione, Capacità e competenze.",
+      "Versione testuale del CV (derivata da european_cv): per copia/incolla nell'app.",
     ),
   cover_letter: z.string(),
   email_draft: z.object({
@@ -69,6 +77,7 @@ export const applicationPackageJsonSchema = {
     "matched_skills",
     "omitted_offer_requirements",
     "company_research",
+    "european_cv",
     "optimized_cv_text",
     "cover_letter",
     "email_draft",
@@ -106,6 +115,7 @@ export const applicationPackageJsonSchema = {
         unavailable_notes: { type: "array", items: { type: "string" } },
       },
     },
+    european_cv: europeanCvJsonSchema,
     optimized_cv_text: { type: "string" },
     cover_letter: { type: "string" },
     email_draft: {

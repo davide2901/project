@@ -33,14 +33,19 @@ export function buildSystemPrompt(
 
 REGOLE D'ORO (obbligatorie):
 1. ONESTÀ ASSOLUTA: puoi solo riformulare, riordinare priorità ed evidenziare competenze GIÀ presenti nel CV/profilo fornito sotto. VIETATO inventare esperienze, titoli, tool, certificazioni, soft skill, risultati, anni di esperienza o lingue non presenti nel materiale originale.
-2. optimized_cv_text = CV IN FORMATO EUROPEO (italiano), partendo dal CV caricato/incollato:
+2. european_cv = CV IN FORMATO EUROPEO (italiano) come oggetto strutturato, partendo dal CV caricato/incollato:
    - Conserva i fatti del candidato (date, sedi, titoli, aziende).
-   - Adatta all'offerta: riordina sezioni/bullet, evidenzia ciò che è rilevante, riduci o ometti dettagli poco utili per quel ruolo.
-   - Obiettivo LUNGHEZZA: massimo 1 pagina A4 (testo compatto, niente riempitivi).
-   - Prima riga = NOME E COGNOME in chiaro (niente titolo "CV" o nome azienda).
-   - Poi contatti su una riga, poi sezioni con titoli in MAIUSCOLO su riga propria: INFORMAZIONI PERSONALI (opzionale se già in testa), SINTESI, ESPERIENZA LAVORATIVA, ISTRUZIONE E FORMAZIONE, CAPACITÀ E COMPETENZE.
-   - Usa elenchi con "• " per esperienze e competenze; max 3–4 bullet per esperienza.
-   - Non è un CV generico inventato: è una revisione mirata del CV originale.
+   - Adatta all'offerta: riordina sezioni, evidenzia skill pertinenti, max 1 pagina A4.
+   - full_name = nome e cognome in chiaro.
+   - email, phone, location = solo se presenti nel CV originale (altrimenti null).
+   - summary = sintesi professionale breve (2–4 righe), mirata al ruolo.
+   - work_experience = array con period, role, employer, location (opz.), highlights (max 4 bullet per voce).
+   - education = array con period, qualification, institution, location (opz.).
+   - skills = competenze rilevanti per l'offerta (solo quelle già nel CV).
+   - languages = array { language, level } se presenti.
+   - additional = certificazioni, progetti, altro solo se nel CV.
+   - optimized_cv_text = lascia stringa vuota ""; verrà generata dall'app dal JSON.
+   - Non inventare esperienze, titoli, tool o lingue.
 3. matched_skills: solo voci che compaiono nel CV o nelle competenze dichiarate (stesso significato ok, sinonimi inventati no).
 4. omitted_offer_requirements: elenca requisiti dell'offerta NON coperti dal profilo — non nasconderli.
 5. honesty_notes: spiega eventuali mapping (es. skill correlate) e ogni limite del match. Se il profilo è debole per il ruolo, dillo chiaramente.
@@ -74,8 +79,9 @@ Non inventare fatti aziendali.
 
 Poi genera il pacchetto candidatura come JSON strutturato.
 Ricorda:
-- optimized_cv_text = revisione in formato europeo del CV originale, adattata a questa offerta (niente skill inventate).
-- cover_letter e email_draft restano nel JSON per l'app, ma il download PDF utente è solo il CV.
+- european_cv = revisione strutturata del CV originale, adattata a questa offerta (niente skill inventate).
+- optimized_cv_text = lascia "" (generato dall'app).
+- cover_letter e email_draft restano nel JSON per l'app; il download PDF usa european_cv con template europeo.
 
 OFFERTA:
 ---

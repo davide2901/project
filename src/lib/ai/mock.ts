@@ -9,6 +9,7 @@ import {
   applicationPackageSchema,
   type ApplicationPackage,
 } from "@/lib/ai/schema";
+import { normalizeCvPackage } from "@/lib/cv/normalize-cv-package";
 
 const FIXTURES: { match: RegExp; file: string }[] = [
   { match: /bending|spoons/i, file: "bending-spoons.json" },
@@ -26,7 +27,7 @@ async function loadFixture(file: string): Promise<ApplicationPackage> {
   if (!parsed.success) {
     throw new Error(`Mock fixture non valido (${file})`);
   }
-  return parsed.data;
+  return normalizeCvPackage(parsed.data);
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   GENERATION_ERROR_FALLBACK,
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
+import { normalizeCvPackage } from "@/lib/cv/normalize-cv-package";
 import { enforcePackageHonesty } from "@/lib/ai/enforce-honesty";
 import { applyPreferenceFilter } from "@/lib/application/preference";
 import type { CvSourceKind } from "@/lib/cv/resolve-source";
@@ -51,6 +52,16 @@ function tryParseJsonObject(text: string): unknown {
   } catch {
     return null;
   }
+}
+
+function finalizePackage(
+  pkg: ApplicationPackage,
+  profile: GenerateInput["profile"],
+): ApplicationPackage {
+  return applyPreferenceFilter(
+    enforcePackageHonesty(normalizeCvPackage(pkg), profile),
+    profile.job_preference,
+  );
 }
 
 function parsePackage(text: string): ApplicationPackage {
@@ -118,10 +129,7 @@ export async function generateApplicationPackage(
 ): Promise<ApplicationPackage> {
   if (isAiMockEnabled()) {
     const mocked = await mockGenerateApplicationPackage(input.offerInput);
-    return applyPreferenceFilter(
-      enforcePackageHonesty(mocked, input.profile),
-      input.profile.job_preference,
-    );
+    return finalizePackage(mocked, input.profile);
   }
 
   const ai = getClient();
@@ -157,10 +165,7 @@ ${researchNotes}
       },
     });
     const pkg = parsePackage(response.text ?? "");
-    return applyPreferenceFilter(
-      enforcePackageHonesty(pkg, input.profile),
-      input.profile.job_preference,
-    );
+    return finalizePackage(pkg, input.profile);
   } catch (err) {
     // Retry senza schema stretto
     try {
@@ -174,10 +179,7 @@ ${researchNotes}
         },
       });
       const pkg = parsePackage(response.text ?? "");
-      return applyPreferenceFilter(
-        enforcePackageHonesty(pkg, input.profile),
-        input.profile.job_preference,
-      );
+      return finalizePackage(pkg, input.profile);
     } catch {
       throw new Error(toUserFacingError(err, GENERATION_ERROR_FALLBACK));
     }

@@ -38,6 +38,20 @@
       "Requisiti esatti della job posting originale non verificati oltre al facsimile"
     ]
   },
+  "european_cv": {
+    "full_name": "Davide Test",
+    "email": null,
+    "phone": null,
+    "location": null,
+    "summary": "Esperienza UI su React e TypeScript con attenzione a layout mobile-first e sistemi di stile (Tailwind). Interesse a collaborare con design e a crescere su design systems.",
+    "work_experience": [],
+    "education": [],
+    "skills": ["React", "TypeScript", "Tailwind CSS"],
+    "languages": [],
+    "additional": [
+      "Profilo più orientato all'engineering UI che al product design puro"
+    ]
+  },
   "optimized_cv_text": "Davide Test — Frontend / UI\n\nEsperienza UI su React e TypeScript con attenzione a layout mobile-first e sistemi di stile (Tailwind). Interesse a collaborare con design e a crescere su design systems.\nNota: il profilo attuale è più engineering-oriented che pure design.",
   "cover_letter": "Dear N26 hiring team,\n\nI am applying for the Product Designer / Frontend role. My background is stronger on React/TypeScript UI engineering than on pure product design; I am transparent about that gap while highlighting mobile-first UI craft and willingness to deepen Figma/design-system practice.\n\nBest regards,\nDavide Test",
   "email_draft": {

@@ -5,6 +5,8 @@ import { useCallback, useState, useTransition } from "react";
 import { updateApplicationStatus } from "@/app/actions/application";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { ApplicationPackage } from "@/lib/ai/schema";
+import { buildCvPrintHtml } from "@/lib/cv/european-cv-template";
+import { resolveEuropeanCv } from "@/lib/cv/parse-cv-text";
 import {
   APPLICATION_STATUS_OPTIONS,
   labelPosition,
@@ -418,7 +420,7 @@ function ExportActions({
         Esporta CV
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Il PDF contiene solo il CV in formato europeo, adattato a questa offerta.
+        Il PDF usa un template europeo a sezioni (nome, sintesi, esperienze, formazione, competenze).
       </p>
       <button type="button" className="btn-primary w-full" onClick={printPdf}>
         Scarica CV in PDF
@@ -456,8 +458,13 @@ function ExportActions({
   );
 }
 
-/** PDF: solo CV, layout tipo curriculum europeo (sezioni chiare). */
+/** PDF: CV europeo con template a sezioni. */
 function buildCvOnlyPrintHtml(data: ApplicationPackage) {
+  const cv = resolveEuropeanCv(data);
+  if (cv) {
+    return buildCvPrintHtml(cv, `CV ${data.role_title}`);
+  }
+
   const escape = (s: string) =>
     s
       .replaceAll("&", "&amp;")
@@ -465,9 +472,7 @@ function buildCvOnlyPrintHtml(data: ApplicationPackage) {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
 
-  const cvHtml = formatEuropeanCvHtml(data.optimized_cv_text, escape);
   const safeTitle = `CV ${data.role_title}`.slice(0, 60);
-
   return `<!doctype html>
 <html lang="it">
 <head>
@@ -475,120 +480,14 @@ function buildCvOnlyPrintHtml(data: ApplicationPackage) {
   <title>${escape(safeTitle)}</title>
   <style>
     @page { margin: 12mm 14mm; size: A4; }
-    * { box-sizing: border-box; }
-    body {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      color: #0b1f36;
-      margin: 0;
-      line-height: 1.35;
-      font-size: 10pt;
-    }
-    h1 {
-      font-size: 16pt;
-      margin: 0 0 2pt;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-    .contacts {
-      color: #5a6b7c;
-      font-size: 9pt;
-      margin: 0 0 10pt;
-    }
-    h2 {
-      font-size: 9.5pt;
-      margin: 10pt 0 4pt;
-      padding-bottom: 2pt;
-      border-bottom: 1px solid #0b1f36;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-weight: 700;
-    }
-    p { margin: 0 0 4pt; }
-    ul { margin: 0 0 4pt; padding-left: 1.05em; }
-    li { margin: 0 0 2pt; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; line-height: 1.4; }
     .block { white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  ${cvHtml}
+  <div class="block">${escape(data.optimized_cv_text.trim() || "—")}</div>
 </body>
 </html>`;
-}
-
-function formatEuropeanCvHtml(
-  raw: string,
-  escape: (s: string) => string,
-): string {
-  const text = raw.trim();
-  if (!text) return "<p>—</p>";
-
-  const sectionRe =
-    /^(INFORMAZIONI PERSONALI|ESPERIENZA LAVORATIVA|ESPERIENZA PROFESSIONALE|ISTRUZIONE E FORMAZIONE|ISTRUZIONE|FORMAZIONE|CAPACITÀ E COMPETENZE|COMPETENZE|LINGUE|SINTESI|SINTESI PROFESSIONALE|PROFILO|INFORMAZIONI AGGIUNTIVE|ALTRE INFORMAZIONI)\s*$/im;
-
-  const lines = text.split(/\r?\n/);
-  let html = "";
-  let i = 0;
-
-  // Nome: prima riga libera, oppure "Nome: …" nelle info personali
-  const firstLine = lines[0]?.trim() ?? "";
-  const nomeField = text.match(/^Nome\s*:\s*(.+)$/im)?.[1]?.trim();
-  if (
-    firstLine &&
-    firstLine.length < 80 &&
-    !sectionRe.test(firstLine) &&
-    !firstLine.includes(":")
-  ) {
-    html += `<h1>${escape(firstLine)}</h1>`;
-    i = 1;
-    while (i < lines.length && lines[i].trim() === "") i += 1;
-    if (i < lines.length && !sectionRe.test(lines[i].trim())) {
-      html += `<p class="contacts">${escape(lines[i].trim())}</p>`;
-      i += 1;
-    }
-  } else if (nomeField) {
-    html += `<h1>${escape(nomeField)}</h1>`;
-  }
-
-  let inList = false;
-  const flushList = () => {
-    if (inList) {
-      html += "</ul>";
-      inList = false;
-    }
-  };
-
-  for (; i < lines.length; i += 1) {
-    const trimmed = lines[i].trim();
-    if (!trimmed) {
-      flushList();
-      continue;
-    }
-    // Evita di ripetere il nome già in h1
-    if (nomeField && /^Nome\s*:/i.test(trimmed) && html.includes("<h1>")) {
-      continue;
-    }
-    if (sectionRe.test(trimmed)) {
-      flushList();
-      html += `<h2>${escape(trimmed)}</h2>`;
-      continue;
-    }
-    if (/^([•\-*]|\d+\.)\s+/.test(trimmed)) {
-      if (!inList) {
-        html += "<ul>";
-        inList = true;
-      }
-      html += `<li>${escape(trimmed.replace(/^([•\-*]|\d+\.)\s+/, ""))}</li>`;
-      continue;
-    }
-    flushList();
-    html += `<p>${escape(trimmed)}</p>`;
-  }
-  flushList();
-
-  if (!html) {
-    return `<div class="block">${escape(text)}</div>`;
-  }
-  return html;
 }
 
 function CopyButton({

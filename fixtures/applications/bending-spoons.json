@@ -45,6 +45,39 @@
       "Headcount aggiornato non verificato da fonti pubbliche recenti"
     ]
   },
+  "european_cv": {
+    "full_name": "Davide Test",
+    "email": null,
+    "phone": null,
+    "location": null,
+    "summary": "Profilo allineato a prodotti web mobile-first con React e TypeScript. Esperienza su Next.js, Tailwind e integrazioni backend (Supabase Auth + RLS).",
+    "work_experience": [
+      {
+        "period": "2024 – oggi",
+        "role": "Sviluppatore frontend",
+        "employer": "Progetti personali / SuMisura",
+        "location": null,
+        "highlights": [
+          "App web mobile-first con Next.js, Supabase e integrazioni AI",
+          "UI curate con Tailwind CSS e flussi end-to-end"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "period": "2020 – 2024",
+        "qualification": "Laurea triennale Ingegneria Informatica",
+        "institution": "Politecnico",
+        "location": null
+      }
+    ],
+    "skills": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Git"],
+    "languages": [
+      { "language": "Italiano", "level": "Madrelingua" },
+      { "language": "Inglese", "level": "B2" }
+    ],
+    "additional": []
+  },
   "optimized_cv_text": "Davide Test — Frontend Developer\n\nProfilo allineato a prodotti web mobile-first con React e TypeScript. Esperienza su Next.js, Tailwind e integrazioni backend (Supabase Auth + RLS).\n\nCompetenze chiave per il ruolo: React, TypeScript, Next.js, Tailwind CSS, Git.\nProgetti: SuMisura (candidature AI), dashboard dati, prototipi UI.\nLingue: Italiano; Inglese B2.",
   "cover_letter": "Gentile team Bending Spoons,\n\nscrivo per la posizione di Frontend Engineer. Porto esperienza concreta su React e TypeScript in prodotti web mobile-first, con attenzione a qualità del codice e integrazioni reali (auth, dati, UI system).\n\nNon invento competenze: il mio percorso è ancora in crescita sulla scala consumer, ma ho già costruito flussi end-to-end e UI curate. Sarei felice di approfondire in un colloquio.\n\nCordiali saluti,\nDavide Test",
   "email_draft": {
