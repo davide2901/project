@@ -19,6 +19,9 @@ import type { JobPreference } from "@/lib/types/database";
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
+/** Budget ricerca web (secondi) prima di passare al JSON senza grounding. */
+const SEARCH_BUDGET_MS = Number(process.env.DISCOVERY_SEARCH_MS ?? 18_000);
+
 export type DiscoveryProfileInput = {
   full_name: string | null;
   skills: string[];
@@ -26,6 +29,26 @@ export type DiscoveryProfileInput = {
   job_preference: JobPreference;
   companies_of_interest: string[];
 };
+
+export type DiscoverOptions = {
+  /** `interactive` = una chiamata grounded; `full` = ricerca + JSON (cron). */
+  mode?: "interactive" | "full";
+};
+
+function logDiscovery(
+  stage: string,
+  extra: Record<string, unknown> = {},
+): void {
+  console.info(
+    JSON.stringify({
+      scope: "discovery",
+      stage,
+      model: MODEL,
+      t: Date.now(),
+      ...extra,
+    }),
+  );
+}
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -72,7 +95,6 @@ function parseDiscovery(text: string): DiscoveryResult {
 
   const parsed = discoveryResultSchema.safeParse(payload);
   if (!parsed.success) {
-    // Tollerante: se c'è un array offers grezzo, prova a filtrare item validi
     const raw = payload as { offers?: unknown; search_notes?: unknown };
     if (Array.isArray(raw.offers)) {
       const offers = raw.offers
@@ -116,6 +138,24 @@ function preferenceAllows(
   return true;
 }
 
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const raced = await Promise.race([
+      promise.then((value) => ({ ok: true as const, value })),
+      new Promise<{ ok: false }>((resolve) => {
+        timer = setTimeout(() => resolve({ ok: false }), ms);
+      }),
+    ]);
+    return raced;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function collectSearchNotes(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
@@ -130,6 +170,7 @@ async function collectSearchNotes(
         ? "solo stage/tirocinio/internship"
         : "lavoro o stage";
 
+  const t0 = Date.now();
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
@@ -145,10 +186,26 @@ Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
         tools: [{ googleSearch: {} }],
       },
     });
-    return response.text?.trim() || null;
-  } catch {
+    const text = response.text?.trim() || null;
+    logDiscovery("search_notes_ok", {
+      ms: Date.now() - t0,
+      chars: text?.length ?? 0,
+    });
+    return text;
+  } catch (err) {
+    logDiscovery("search_notes_error", {
+      ms: Date.now() - t0,
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+    });
     return null;
   }
+}
+
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
+    msg,
+  );
 }
 
 async function generateDiscoveryJson(
@@ -157,6 +214,7 @@ async function generateDiscoveryJson(
   systemInstruction: string,
   schema: Record<string, unknown>,
 ): Promise<DiscoveryResult> {
+  const t0 = Date.now();
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
@@ -168,8 +226,17 @@ async function generateDiscoveryJson(
         responseJsonSchema: schema,
       },
     });
-    return parseDiscovery(response.text ?? "");
-  } catch {
+    const parsed = parseDiscovery(response.text ?? "");
+    logDiscovery("json_ok", { ms: Date.now() - t0, offers: parsed.offers.length });
+    return parsed;
+  } catch (err) {
+    logDiscovery("json_schema_retry", {
+      ms: Date.now() - t0,
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+      quota: isQuotaError(err),
+    });
+    if (isQuotaError(err)) throw err;
+    const t1 = Date.now();
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: `${contents}
@@ -182,13 +249,105 @@ offers può essere [].`,
         responseMimeType: "application/json",
       },
     });
-    return parseDiscovery(response.text ?? "");
+    const parsed = parseDiscovery(response.text ?? "");
+    logDiscovery("json_retry_ok", {
+      ms: Date.now() - t1,
+      offers: parsed.offers.length,
+    });
+    return parsed;
   }
+}
+
+/**
+ * Una sola chiamata: Google Search + testo JSON (senza responseMimeType).
+ * Più veloce del two-step; adatta al bottone "Cerca offerte" su Vercel.
+ */
+async function discoverInteractiveSingleCall(
+  ai: GoogleGenAI,
+  profile: DiscoveryProfileInput,
+): Promise<DiscoveryResult> {
+  const systemInstruction = `${buildDiscoverySystemPrompt(profile)}
+
+Usa la ricerca web. Alla fine rispondi SOLO con un oggetto JSON (niente markdown fuori dal JSON) con chiavi "offers" e "search_notes".`;
+  const contents = `${buildDiscoveryUserPrompt(profile)}
+
+Dopo la ricerca, restituisci SOLO JSON:
+{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":null,"snippet":"...","match_reason":"..."}],"search_notes":["..."]}`;
+
+  const t0 = Date.now();
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents,
+    config: {
+      systemInstruction,
+      temperature: 0.35,
+      tools: [{ googleSearch: {} }],
+    },
+  });
+  const parsed = parseDiscovery(response.text ?? "");
+  logDiscovery("interactive_ok", {
+    ms: Date.now() - t0,
+    offers: parsed.offers.length,
+    chars: response.text?.length ?? 0,
+  });
+  return parsed;
+}
+
+async function discoverFullTwoStep(
+  ai: GoogleGenAI,
+  profile: DiscoveryProfileInput,
+): Promise<DiscoveryResult> {
+  const systemInstruction = buildDiscoverySystemPrompt(profile);
+  const schema = discoveryResultJsonSchema as Record<string, unknown>;
+
+  const searchRace = await withTimeout(
+    collectSearchNotes(ai, profile),
+    SEARCH_BUDGET_MS,
+  );
+  const searchNotes = searchRace.ok ? searchRace.value : null;
+  if (!searchRace.ok) {
+    logDiscovery("search_notes_timeout", { budgetMs: SEARCH_BUDGET_MS });
+  }
+
+  const basePrompt = buildDiscoveryUserPrompt(profile);
+  const contents = searchNotes
+    ? `${basePrompt}
+
+---
+NOTE DALLA RICERCA WEB (fonte primaria; non inventare offerte assenti da qui):
+${searchNotes}
+---`
+    : `${basePrompt}
+
+Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spiega in search_notes, oppure solo offerte di cui sei molto sicuro senza inventare URL.`;
+
+  const result = await generateDiscoveryJson(
+    ai,
+    contents,
+    systemInstruction,
+    schema,
+  );
+  const notes = [...(result.search_notes ?? [])];
+  if (!searchNotes) {
+    notes.push(
+      "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",
+    );
+  }
+  return { ...result, search_notes: notes };
 }
 
 export async function discoverOffersForProfile(
   profile: DiscoveryProfileInput,
+  options: DiscoverOptions = {},
 ): Promise<DiscoveryResult> {
+  const mode = options.mode ?? "interactive";
+  const t0 = Date.now();
+  logDiscovery("start", {
+    mode,
+    skills: profile.skills.length,
+    pref: profile.job_preference,
+  });
+
   if (isAiMockEnabled()) {
     const mocked = await mockDiscoverOffers();
     return {
@@ -201,42 +360,40 @@ export async function discoverOffersForProfile(
 
   try {
     const ai = getClient();
-    const systemInstruction = buildDiscoverySystemPrompt(profile);
-    const schema = discoveryResultJsonSchema as Record<string, unknown>;
+    let result: DiscoveryResult;
 
-    const searchNotes = await collectSearchNotes(ai, profile);
-    const basePrompt = buildDiscoveryUserPrompt(profile);
-    const contents = searchNotes
-      ? `${basePrompt}
-
----
-NOTE DALLA RICERCA WEB (fonte primaria; non inventare offerte assenti da qui):
-${searchNotes}
----`
-      : `${basePrompt}
-
-Nota: ricerca web non disponibile. Restituisci offers: [] e spiega in search_notes, oppure solo offerte di cui sei molto sicuro senza inventare URL.`;
-
-    const result = await generateDiscoveryJson(
-      ai,
-      contents,
-      systemInstruction,
-      schema,
-    );
-    const notes = [...(result.search_notes ?? [])];
-    if (!searchNotes) {
-      notes.push(
-        "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",
-      );
+    if (mode === "interactive") {
+      try {
+        result = await discoverInteractiveSingleCall(ai, profile);
+      } catch (err) {
+        logDiscovery("interactive_fail_fallback_full", {
+          error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+          quota: isQuotaError(err),
+        });
+        if (isQuotaError(err)) throw err;
+        result = await discoverFullTwoStep(ai, profile);
+      }
+    } else {
+      result = await discoverFullTwoStep(ai, profile);
     }
-    return {
+
+    const filtered = {
       ...result,
       offers: result.offers.filter((o) =>
         preferenceAllows(o.position_type, profile.job_preference),
       ),
-      search_notes: notes,
     };
+    logDiscovery("done", {
+      mode,
+      ms: Date.now() - t0,
+      offers: filtered.offers.length,
+    });
+    return filtered;
   } catch (err) {
+    logDiscovery("fatal", {
+      ms: Date.now() - t0,
+      error: err instanceof Error ? err.message.slice(0, 300) : "unknown",
+    });
     throw new Error(toUserFacingError(err, DISCOVERY_ERROR_FALLBACK));
   }
 }

@@ -107,14 +107,34 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
 
   let result;
   try {
-    result = await discoverOffersForProfile({
-      full_name: p.full_name,
-      skills: p.skills,
-      cv_fallback_text: p.cv_fallback_text,
-      job_preference: p.job_preference,
-      companies_of_interest: p.companies_of_interest,
-    });
+    console.info(
+      JSON.stringify({
+        scope: "discovery",
+        stage: "runDiscovery_start",
+        userId: user.id,
+        t: Date.now(),
+      }),
+    );
+    result = await discoverOffersForProfile(
+      {
+        full_name: p.full_name,
+        skills: p.skills,
+        cv_fallback_text: p.cv_fallback_text,
+        job_preference: p.job_preference,
+        companies_of_interest: p.companies_of_interest,
+      },
+      { mode: "interactive" },
+    );
   } catch (err) {
+    console.error(
+      JSON.stringify({
+        scope: "discovery",
+        stage: "runDiscovery_error",
+        userId: user.id,
+        error: err instanceof Error ? err.message.slice(0, 300) : "unknown",
+        t: Date.now(),
+      }),
+    );
     return {
       ok: false,
       error: toUserFacingError(err, DISCOVERY_ERROR_FALLBACK),
@@ -248,13 +268,16 @@ export async function runDiscoveryForUserId(
 
   let result;
   try {
-    result = await discoverOffersForProfile({
-      full_name: profile.full_name,
-      skills: profile.skills,
-      cv_fallback_text: profile.cv_fallback_text,
-      job_preference: profile.job_preference,
-      companies_of_interest: profile.companies_of_interest,
-    });
+    result = await discoverOffersForProfile(
+      {
+        full_name: profile.full_name,
+        skills: profile.skills,
+        cv_fallback_text: profile.cv_fallback_text,
+        job_preference: profile.job_preference,
+        companies_of_interest: profile.companies_of_interest,
+      },
+      { mode: "full" },
+    );
   } catch (err) {
     return {
       inserted: 0,

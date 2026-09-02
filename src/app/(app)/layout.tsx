@@ -4,6 +4,9 @@ import { AppShell } from "@/components/layout/app-shell";
 import { createClient } from "@/lib/supabase/server";
 import { loadTabsBootstrap, type TabsBootstrap } from "@/lib/tabs/bootstrap";
 
+/** Generazione candidatura / azioni lunghe: evita kill a 10s su Hobby. */
+export const maxDuration = 60;
+
 /** Status bar / theme iOS dentro l'app (carta chiara). */
 export const viewport: Viewport = {
   width: "device-width",

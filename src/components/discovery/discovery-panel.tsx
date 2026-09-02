@@ -5,9 +5,9 @@ import { useCallback, useState, useTransition } from "react";
 
 import {
   dismissOffer,
-  runDiscovery,
   startApplicationFromOffer,
 } from "@/app/actions/discovery";
+import type { RunDiscoveryResult } from "@/app/actions/discovery";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import { TabLink } from "@/components/layout/tab-link";
 import { labelPosition } from "@/lib/application/labels";
@@ -39,7 +39,31 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
     setMessage(null);
     setBusy({ kind: "search" });
     startTransition(async () => {
-      const res = await runDiscovery();
+      let res: RunDiscoveryResult;
+      try {
+        // Route dedicata con maxDuration=60 (le server action Hobby tagliano a ~10s).
+        const response = await fetch("/api/discovery", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        res = (await response.json()) as RunDiscoveryResult;
+        if (!response.ok && res && typeof res === "object" && "ok" in res) {
+          // body già tipizzato
+        } else if (!response.ok) {
+          res = {
+            ok: false,
+            error:
+              "Ricerca offerte non disponibile al momento. Riprova tra poco.",
+          };
+        }
+      } catch {
+        setBusy(null);
+        setError(
+          "Ricerca interrotta (timeout o rete). Riprova tra poco.",
+        );
+        return;
+      }
       setBusy(null);
       if (!res.ok) {
         setError(res.error);

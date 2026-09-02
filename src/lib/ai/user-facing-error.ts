@@ -15,6 +15,14 @@ export function toUserFacingError(
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
 
+  if (
+    /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
+      trimmed,
+    )
+  ) {
+    return "Limite richieste AI raggiunto. Attendi qualche minuto e riprova.";
+  }
+
   // Corpi JSON Gemini / Google API
   if (
     trimmed.startsWith("{") ||
