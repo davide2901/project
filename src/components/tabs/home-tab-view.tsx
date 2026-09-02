@@ -15,7 +15,9 @@ export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
           {data.firstName ? `Ciao, ${data.firstName}` : "Ciao"}
         </h1>
         <p className="max-w-prose text-sm leading-relaxed text-[var(--muted)]">
-          Tre passi: completa il profilo, trova offerte, genera i documenti.
+          {needsProfile
+            ? "Inizia dal profilo: senza CV o competenze non possiamo proporti offerte utili."
+            : "Cerca offerte, genera il CV europeo e salvalo in archivio."}
           {typeof data.count === "number" && data.count > 0 ? (
             <>
               {" "}

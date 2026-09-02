@@ -43,7 +43,7 @@ export const applicationPackageSchema = z.object({
   optimized_cv_text: z
     .string()
     .describe(
-      "CV riformulato/riordinato; nessuna competenza inventata",
+      "CV in formato europeo italiano: parti dal CV originale, adatta all'offerta (riordina sezioni/priorità, evidenzia skill pertinenti). Niente competenze inventate. Sezioni tipiche: Informazioni personali, Sintesi, Esperienza, Istruzione, Capacità e competenze.",
     ),
   cover_letter: z.string(),
   email_draft: z.object({

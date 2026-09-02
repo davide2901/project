@@ -33,13 +33,19 @@ export function buildSystemPrompt(
 
 REGOLE D'ORO (obbligatorie):
 1. ONESTÀ ASSOLUTA: puoi solo riformulare, riordinare priorità ed evidenziare competenze GIÀ presenti nel CV/profilo fornito sotto. VIETATO inventare esperienze, titoli, tool, certificazioni, soft skill, risultati, anni di esperienza o lingue non presenti nel materiale originale.
-2. matched_skills: solo voci che compaiono nel CV o nelle competenze dichiarate (stesso significato ok, sinonimi inventati no).
-3. omitted_offer_requirements: elenca requisiti dell'offerta NON coperti dal profilo — non nasconderli.
-4. honesty_notes: spiega eventuali mapping (es. skill correlate) e ogni limite del match. Se il profilo è debole per il ruolo, dillo chiaramente.
-5. FATTI WEB: sulla ricerca azienda riporta solo fatti dalle note di ricerca fornite o verificabili. Se un'informazione non è reperibile, scrivi esattamente "non reperibile" e dichiaralo in unavailable_notes / honesty_notes. Non inventare sedi, clienti o riconoscimenti.
-6. STAGE: considera esplicitamente offerte di stage, tirocinio e internship. Classifica position_type di conseguenza. ${preferenceHint}
-7. LINGUA: rispondi in italiano, tono professionale e chiaro.
-8. OUTPUT: rispondi SOLO con un oggetto JSON completo e valido conforme allo schema richiesto (nessun markdown, nessun testo fuori dal JSON).
+2. optimized_cv_text = CV IN FORMATO EUROPEO (italiano), partendo dal CV caricato/incollato:
+   - Conserva i fatti del candidato (date, sedi, titoli, aziende).
+   - Adatta all'offerta: riordina sezioni/bullet, evidenzia ciò che è rilevante, riduci o ometti dettagli poco utili per quel ruolo.
+   - Struttura tipica con titoli in MAIUSCOLO su riga propria: INFORMAZIONI PERSONALI (o nome in prima riga + contatti), SINTESI, ESPERIENZA LAVORATIVA, ISTRUZIONE E FORMAZIONE, CAPACITÀ E COMPETENZE, eventuale INFORMAZIONI AGGIUNTIVE.
+   - Usa elenchi con "• " per esperienze e competenze.
+   - Non è un CV generico inventato: è una revisione mirata del CV originale.
+3. matched_skills: solo voci che compaiono nel CV o nelle competenze dichiarate (stesso significato ok, sinonimi inventati no).
+4. omitted_offer_requirements: elenca requisiti dell'offerta NON coperti dal profilo — non nasconderli.
+5. honesty_notes: spiega eventuali mapping (es. skill correlate) e ogni limite del match. Se il profilo è debole per il ruolo, dillo chiaramente.
+6. FATTI WEB: sulla ricerca azienda riporta solo fatti dalle note di ricerca fornite o verificabili. Se un'informazione non è reperibile, scrivi esattamente "non reperibile" e dichiaralo in unavailable_notes / honesty_notes. Non inventare sedi, clienti o riconoscimenti.
+7. STAGE: considera esplicitamente offerte di stage, tirocinio e internship. Classifica position_type di conseguenza. ${preferenceHint}
+8. LINGUA: rispondi in italiano, tono professionale e chiaro.
+9. OUTPUT: rispondi SOLO con un oggetto JSON completo e valido conforme allo schema richiesto (nessun markdown, nessun testo fuori dal JSON).
 
 Contesto candidato:
 - Nome: ${profile.full_name?.trim() || "non indicato"}
@@ -65,7 +71,9 @@ Se sotto trovi NOTE RICERCA AZIENDA, usale come unica fonte per company_research
 Non inventare fatti aziendali.
 
 Poi genera il pacchetto candidatura come JSON strutturato.
-Ricorda: CV e lettera possono solo riformulare il materiale del candidato; mai aggiungere competenze non dichiarate.
+Ricorda:
+- optimized_cv_text = revisione in formato europeo del CV originale, adattata a questa offerta (niente skill inventate).
+- cover_letter e email_draft restano nel JSON per l'app, ma il download PDF utente è solo il CV.
 
 OFFERTA:
 ---

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { toUserFacingError } from "@/lib/ai/user-facing-error";
 import { createClient } from "@/lib/supabase/server";
 import type { JobPreference } from "@/lib/types/database";
 
@@ -10,11 +11,16 @@ export type ProfileActionState = {
   success: boolean;
 };
 
+const FAKE_COMPANY_PLACEHOLDERS = new Set(
+  ["acme spa", "beta studio", "roto studio"].map((s) => s.toLowerCase()),
+);
+
 function parseList(raw: string): string[] {
   return raw
     .split(/[\n,;]+/)
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((item) => !FAKE_COMPANY_PLACEHOLDERS.has(item.toLowerCase()));
 }
 
 export async function updateProfile(
@@ -48,23 +54,33 @@ export async function updateProfile(
     return { error: "Preferenza non valida.", success: false };
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: fullName || null,
-      figma_cv_url: figmaCvUrl || null,
-      figma_portfolio_url: figmaPortfolioUrl || null,
-      cv_fallback_text: cvFallbackText || null,
-      job_preference: jobPreference,
-      skills,
-      companies_of_interest: companies,
-    })
-    .eq("user_id", user.id);
+  const payload = {
+    user_id: user.id,
+    full_name: fullName || null,
+    figma_cv_url: figmaCvUrl || null,
+    figma_portfolio_url: figmaPortfolioUrl || null,
+    cv_fallback_text: cvFallbackText || null,
+    job_preference: jobPreference,
+    skills,
+    companies_of_interest: companies,
+  };
+
+  const { error } = await supabase.from("profiles").upsert(payload, {
+    onConflict: "user_id",
+  });
 
   if (error) {
-    return { error: error.message, success: false };
+    return {
+      error: toUserFacingError(
+        error.message,
+        "Salvataggio non riuscito. Riprova tra poco.",
+      ),
+      success: false,
+    };
   }
 
   revalidatePath("/profilo");
+  revalidatePath("/home");
+  revalidatePath("/archivio");
   return { error: null, success: true };
 }

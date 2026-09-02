@@ -89,10 +89,6 @@ function preferenceAllows(
   return true;
 }
 
-/**
- * Google Search non può coesistere con responseMimeType JSON.
- * Prima raccogliamo note di ricerca (testo), poi strutturiamo in JSON.
- */
 async function collectSearchNotes(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
@@ -129,6 +125,41 @@ Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
   }
 }
 
+async function generateDiscoveryJson(
+  ai: GoogleGenAI,
+  contents: string,
+  systemInstruction: string,
+  schema: Record<string, unknown>,
+): Promise<DiscoveryResult> {
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents,
+      config: {
+        systemInstruction,
+        temperature: 0.35,
+        responseMimeType: "application/json",
+        responseJsonSchema: schema,
+      },
+    });
+    return parseDiscovery(response.text ?? "");
+  } catch {
+    // Fallback senza responseJsonSchema (alcuni modelli lo rifiutano)
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: `${contents}
+
+Rispondi SOLO con JSON valido conforme allo schema discovery (offers + search_notes).`,
+      config: {
+        systemInstruction,
+        temperature: 0.35,
+        responseMimeType: "application/json",
+      },
+    });
+    return parseDiscovery(response.text ?? "");
+  }
+}
+
 export async function discoverOffersForProfile(
   profile: DiscoveryProfileInput,
 ): Promise<DiscoveryResult> {
@@ -155,21 +186,17 @@ export async function discoverOffersForProfile(
 NOTE DALLA RICERCA WEB (usa queste come fonte primaria; non inventare offerte non citate):
 ${searchNotes}
 ---`
-    : basePrompt;
+    : `${basePrompt}
+
+Nota: la ricerca web non ha restituito note. Proponi solo offerte plausibili e recenti per il profilo, senza inventare URL; se non sei sicuro metti source_url null e spiega in search_notes.`;
 
   try {
-    // Mai combinare googleSearch + responseMimeType application/json
-    const response = await ai.models.generateContent({
-      model: MODEL,
+    const result = await generateDiscoveryJson(
+      ai,
       contents,
-      config: {
-        systemInstruction,
-        temperature: 0.35,
-        responseMimeType: "application/json",
-        responseJsonSchema: schema,
-      },
-    });
-    const result = parseDiscovery(response.text ?? "");
+      systemInstruction,
+      schema,
+    );
     const notes = [...result.search_notes];
     if (!searchNotes) {
       notes.push(

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 
 import { updateApplicationStatus } from "@/app/actions/application";
+import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { ApplicationPackage } from "@/lib/ai/schema";
 import {
   APPLICATION_STATUS_OPTIONS,
@@ -12,7 +13,7 @@ import {
 } from "@/lib/application/labels";
 import type { ApplicationStatus } from "@/lib/types/database";
 
-type DetailTab = "documenti" | "analisi" | "azienda";
+type DocKey = "cv" | "letter" | "email" | "notes" | "ats" | "skills" | "gaps" | "company";
 
 export function ApplicationResult({
   data,
@@ -31,7 +32,105 @@ export function ApplicationResult({
   figmaPortfolioUrl?: string | null;
   figmaSyncCode?: string | null;
 }) {
-  const [tab, setTab] = useState<DetailTab>("documenti");
+  const [openDoc, setOpenDoc] = useState<DocKey | null>(null);
+  const close = useCallback(() => setOpenDoc(null), []);
+
+  const docs: {
+    key: DocKey;
+    title: string;
+    preview: string;
+    body: string;
+    list?: string[];
+    chips?: string[];
+  }[] = [
+    {
+      key: "cv",
+      title: "CV (formato europeo)",
+      preview: "Tocca per leggere e copiare il CV ottimizzato per questa offerta.",
+      body: data.optimized_cv_text,
+    },
+    {
+      key: "letter",
+      title: "Lettera motivazionale",
+      preview: "Tocca per aprire la lettera.",
+      body: data.cover_letter,
+    },
+    {
+      key: "email",
+      title: "Bozza email",
+      preview: data.email_draft.subject || "Tocca per aprire la bozza.",
+      body: `Oggetto: ${data.email_draft.subject}\n\n${data.email_draft.body}`,
+    },
+    ...(data.honesty_notes.length
+      ? [
+          {
+            key: "notes" as const,
+            title: "Note di trasparenza",
+            preview: `${data.honesty_notes.length} note · tocchi per leggere`,
+            body: data.honesty_notes.map((n) => `• ${n}`).join("\n"),
+            list: data.honesty_notes,
+          },
+        ]
+      : []),
+  ];
+
+  const analysis: {
+    key: DocKey;
+    title: string;
+    preview: string;
+    body: string;
+    list?: string[];
+    chips?: string[];
+  }[] = [
+    {
+      key: "ats",
+      title: "Keyword ATS",
+      preview: data.ats_keywords.length
+        ? data.ats_keywords.slice(0, 4).join(" · ")
+        : "Nessuna keyword",
+      body: data.ats_keywords.join(" · ") || "Nessuna keyword",
+      chips: data.ats_keywords,
+    },
+    {
+      key: "skills",
+      title: "Competenze allineate",
+      preview: data.matched_skills.length
+        ? data.matched_skills.slice(0, 4).join(" · ")
+        : "Nessuna",
+      body: data.matched_skills.join(" · ") || "Nessuna",
+      chips: data.matched_skills,
+    },
+    {
+      key: "gaps",
+      title: "Requisiti non coperti",
+      preview: data.omitted_offer_requirements.length
+        ? `${data.omitted_offer_requirements.length} requisiti`
+        : "Nessuno evidenziato",
+      body: data.omitted_offer_requirements.length
+        ? data.omitted_offer_requirements.map((r) => `• ${r}`).join("\n")
+        : "Nessuno evidenziato",
+    },
+    {
+      key: "company",
+      title: "Ricerca azienda",
+      preview: data.company_research.summary.slice(0, 90) + (data.company_research.summary.length > 90 ? "…" : ""),
+      body: [
+        data.company_research.summary,
+        "",
+        ...data.company_research.facts.map((f) => `${f.label}: ${f.value}`),
+        data.company_research.unavailable_notes.length
+          ? `\nNon reperibile: ${data.company_research.unavailable_notes.join(" · ")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    },
+  ];
+
+  const active =
+    openDoc == null
+      ? null
+      : [...docs, ...analysis].find((d) => d.key === openDoc) ?? null;
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -60,106 +159,118 @@ export function ApplicationResult({
         figmaSyncCode={figmaSyncCode ?? null}
       />
 
-      <div
-        role="tablist"
-        aria-label="Sezioni candidatura"
-        className="flex gap-1 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1"
+      <section className="space-y-3">
+        <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
+          Documenti
+        </h3>
+        <p className="text-sm text-[var(--muted)]">
+          Tocca una voce per aprirla a schermo intero.
+        </p>
+        <ul className="space-y-2">
+          {docs.map((doc) => (
+            <li key={doc.key}>
+              <DocRow
+                title={doc.title}
+                preview={doc.preview}
+                onOpen={() => setOpenDoc(doc.key)}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
+          Analisi
+        </h3>
+        <ul className="space-y-2">
+          {analysis.map((doc) => (
+            <li key={doc.key}>
+              <DocRow
+                title={doc.title}
+                preview={doc.preview}
+                onOpen={() => setOpenDoc(doc.key)}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <OverlaySheet
+        open={active != null}
+        title={active?.title ?? ""}
+        onClose={close}
+        footer={
+          active ? (
+            <CopyButton text={active.body} fullWidth />
+          ) : null
+        }
       >
-        {(
-          [
-            { id: "documenti", label: "Documenti" },
-            { id: "analisi", label: "Analisi" },
-            { id: "azienda", label: "Azienda" },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`min-h-11 flex-1 rounded-lg px-2 text-sm font-semibold transition ${
-              tab === t.id
-                ? "bg-[var(--btn)] text-white"
-                : "text-[var(--ink)] active:bg-[var(--tint)]"
-            }`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "documenti" ? (
-        <div className="space-y-6" role="tabpanel">
-          <ResultBlock title="CV ottimizzato" body={data.optimized_cv_text} />
-          <ResultBlock title="Lettera motivazionale" body={data.cover_letter} />
-          <ResultBlock
-            title="Bozza email"
-            body={`Oggetto: ${data.email_draft.subject}\n\n${data.email_draft.body}`}
-          />
-          {data.honesty_notes.length ? (
-            <details className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
-              <summary className="cursor-pointer text-sm font-semibold text-[var(--ink)]">
-                Note di trasparenza
-              </summary>
-              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--muted)]">
-                {data.honesty_notes.map((n) => (
-                  <li key={n}>• {n}</li>
-                ))}
-              </ul>
-            </details>
-          ) : null}
-        </div>
-      ) : null}
-
-      {tab === "analisi" ? (
-        <div className="space-y-6" role="tabpanel">
-          <ChipBlock
-            title="Keyword ATS"
-            items={data.ats_keywords}
-            empty="Nessuna keyword"
-          />
-          <ChipBlock
-            title="Competenze allineate (dal tuo CV)"
-            items={data.matched_skills}
-            empty="Nessuna competenza allineata"
-          />
-          <ResultBlock
-            title="Requisiti offerta non coperti"
-            body={
-              data.omitted_offer_requirements.length
-                ? data.omitted_offer_requirements.map((r) => `• ${r}`).join("\n")
-                : "Nessuno evidenziato"
-            }
-          />
-        </div>
-      ) : null}
-
-      {tab === "azienda" ? (
-        <div className="space-y-4" role="tabpanel">
-          <p className="text-sm leading-relaxed text-[var(--muted)]">
-            {data.company_research.summary}
-          </p>
-          <ul className="space-y-2 text-sm">
-            {data.company_research.facts.map((fact) => (
+        {active?.list ? (
+          <ul className="space-y-2 text-sm leading-relaxed text-[var(--ink)]">
+            {active.list.map((n: string) => (
+              <li key={n}>• {n}</li>
+            ))}
+          </ul>
+        ) : active?.chips?.length ? (
+          <ul className="flex flex-wrap gap-2">
+            {active.chips.map((c: string) => (
               <li
-                key={`${fact.label}-${fact.value}`}
-                className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3"
+                key={c}
+                className="rounded-full border border-[var(--line)] bg-[var(--tint)] px-3 py-1.5 text-sm text-[var(--ink)]"
               >
-                <span className="font-medium text-[var(--ink)]">{fact.label}</span>
-                <p className="mt-1 text-[var(--ink)]">{fact.value}</p>
+                {c}
               </li>
             ))}
           </ul>
-          {data.company_research.unavailable_notes.length ? (
-            <p className="text-xs text-[var(--muted)]">
-              Non reperibile:{" "}
-              {data.company_research.unavailable_notes.join(" · ")}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+        ) : active?.key === "company" ? (
+          <div className="space-y-3 text-sm leading-relaxed text-[var(--ink)]">
+            <p className="text-[var(--muted)]">{data.company_research.summary}</p>
+            <ul className="space-y-2">
+              {data.company_research.facts.map((fact) => (
+                <li
+                  key={`${fact.label}-${fact.value}`}
+                  className="rounded-xl border border-[var(--line)] bg-[var(--tint)] px-3 py-3"
+                >
+                  <span className="font-medium">{fact.label}</span>
+                  <p className="mt-1">{fact.value}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--ink)]">
+            {active?.body}
+          </div>
+        )}
+      </OverlaySheet>
     </div>
+  );
+}
+
+function DocRow({
+  title,
+  preview,
+  onOpen,
+}: {
+  title: string;
+  preview: string;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3.5 text-left shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-[var(--ink)]">{title}</p>
+        <p className="mt-0.5 truncate text-sm text-[var(--muted)]">{preview}</p>
+      </div>
+      <span aria-hidden className="text-[var(--muted)]">
+        ›
+      </span>
+    </button>
   );
 }
 
@@ -233,9 +344,9 @@ function ExportActions({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   function printPdf() {
-    const html = buildPrintableHtml(data);
+    const html = buildCvOnlyPrintHtml(data);
     const iframe = document.createElement("iframe");
-    iframe.setAttribute("title", "Anteprima PDF SuMisura");
+    iframe.setAttribute("title", "CV PDF SuMisura");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
     iframe.style.bottom = "0";
@@ -257,7 +368,7 @@ function ExportActions({
     doc.write(html);
     doc.close();
 
-    const runPrint = () => {
+    window.setTimeout(() => {
       try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
@@ -269,41 +380,26 @@ function ExportActions({
           if (iframe.parentNode) document.body.removeChild(iframe);
         }, 1500);
       }
-    };
-
-    // Safari / mobile: load può non arrivare; aspetta un tick
-    window.setTimeout(runPrint, 300);
+    }, 300);
   }
 
   async function openFigma() {
     const url = figmaCvUrl || figmaPortfolioUrl;
-    const payload = [
-      `CV ottimizzato — ${data.company_name} · ${data.role_title}`,
-      "",
-      data.optimized_cv_text,
-      "",
-      "— Lettera —",
-      data.cover_letter,
-    ].join("\n");
-
     try {
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(data.optimized_cv_text);
       setNote(
         url
-          ? "Testo copiato. Apro Figma: incolla oppure usa il plugin."
-          : "Testo copiato. Aggiungi il link Figma in Profilo → Avanzate.",
+          ? "CV copiato. Apro Figma: incolla oppure usa il plugin."
+          : "CV copiato. Aggiungi il link Figma in Profilo → Avanzate.",
       );
     } catch {
       setNote(
         url
-          ? "Apro Figma. Copia CV e lettera dai blocchi sotto."
+          ? "Apro Figma. Copia il CV dalla scheda Documenti."
           : "Aggiungi il link Figma in Profilo → Avanzate.",
       );
     }
-
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function copySyncCode() {
@@ -319,13 +415,13 @@ function ExportActions({
   return (
     <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
       <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-        Esporta
+        Esporta CV
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Scarica i documenti o copiali. Figma è opzionale.
+        Il PDF contiene solo il CV in formato europeo, adattato a questa offerta.
       </p>
       <button type="button" className="btn-primary w-full" onClick={printPdf}>
-        Crea PDF
+        Scarica CV in PDF
       </button>
       <button
         type="button"
@@ -349,9 +445,6 @@ function ExportActions({
               Copia codice plugin
             </button>
           ) : null}
-          <p className="text-xs text-[var(--muted)]">
-            Serve un tuo file Figma nel Profilo. Nessuna sync automatica.
-          </p>
         </div>
       ) : null}
       {note ? (
@@ -363,7 +456,8 @@ function ExportActions({
   );
 }
 
-function buildPrintableHtml(data: ApplicationPackage) {
+/** PDF: solo CV, layout tipo curriculum europeo (sezioni chiare). */
+function buildCvOnlyPrintHtml(data: ApplicationPackage) {
   const escape = (s: string) =>
     s
       .replaceAll("&", "&amp;")
@@ -371,94 +465,145 @@ function buildPrintableHtml(data: ApplicationPackage) {
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
 
+  const cvHtml = formatEuropeanCvHtml(data.optimized_cv_text, escape);
+
   return `<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <title>${escape(data.company_name)} — ${escape(data.role_title)}</title>
+  <title>CV — ${escape(data.role_title)} · ${escape(data.company_name)}</title>
   <style>
-    body { font-family: Georgia, "Times New Roman", serif; color: #0b1f36; margin: 40px; line-height: 1.5; }
-    h1 { font-size: 22px; margin: 0 0 6px; }
-    h2 { font-size: 15px; margin: 28px 0 10px; border-bottom: 1px solid #d0dae6; padding-bottom: 4px; }
-    .body { white-space: pre-wrap; font-family: Georgia, serif; font-size: 13px; }
-    .muted { color: #5a6b7c; font-size: 12px; margin: 0 0 20px; }
+    @page { margin: 18mm 16mm; }
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #0b1f36;
+      margin: 0;
+      line-height: 1.45;
+      font-size: 11pt;
+    }
+    .meta { color: #5a6b7c; font-size: 9pt; margin: 0 0 14pt; }
+    h1 {
+      font-size: 18pt;
+      margin: 0 0 4pt;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    h2 {
+      font-size: 10.5pt;
+      margin: 16pt 0 6pt;
+      padding-bottom: 3pt;
+      border-bottom: 1.5px solid #0b1f36;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    p { margin: 0 0 6pt; }
+    ul { margin: 0 0 6pt; padding-left: 1.1em; }
+    li { margin: 0 0 3pt; }
+    .block { white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h1>${escape(data.company_name)} · ${escape(data.role_title)}</h1>
-  <p class="muted">Candidatura SuMisura — ${escape(labelPosition(data.position_type))}</p>
-  <h2>CV ottimizzato</h2>
-  <div class="body">${escape(data.optimized_cv_text)}</div>
-  <h2>Lettera motivazionale</h2>
-  <div class="body">${escape(data.cover_letter)}</div>
-  <h2>Email</h2>
-  <div class="body">${escape(`Oggetto: ${data.email_draft.subject}\n\n${data.email_draft.body}`)}</div>
+  <p class="meta">CV · ${escape(data.company_name)} — ${escape(data.role_title)} · SuMisura</p>
+  ${cvHtml}
 </body>
 </html>`;
 }
 
-function ChipBlock({
-  title,
-  items,
-  empty,
+function formatEuropeanCvHtml(
+  raw: string,
+  escape: (s: string) => string,
+): string {
+  const text = raw.trim();
+  if (!text) return "<p>—</p>";
+
+  const sectionRe =
+    /^(INFORMAZIONI PERSONALI|ESPERIENZA LAVORATIVA|ESPERIENZA PROFESSIONALE|ISTRUZIONE E FORMAZIONE|ISTRUZIONE|FORMAZIONE|CAPACITÀ E COMPETENZE|COMPETENZE|LINGUE|SINTESI|PROFILO|INFORMAZIONI AGGIUNTIVE|ALTRE INFORMAZIONI)\s*$/im;
+
+  const lines = text.split(/\r?\n/);
+  const firstLine = lines[0]?.trim() ?? "";
+  const looksLikeName =
+    firstLine.length > 0 &&
+    firstLine.length < 80 &&
+    !sectionRe.test(firstLine) &&
+    !firstLine.includes(":");
+
+  let html = "";
+  let i = 0;
+  if (looksLikeName) {
+    html += `<h1>${escape(firstLine)}</h1>`;
+    i = 1;
+    // contact line often follows
+    while (i < lines.length && lines[i].trim() === "") i += 1;
+    if (i < lines.length && !sectionRe.test(lines[i].trim())) {
+      html += `<p class="meta">${escape(lines[i].trim())}</p>`;
+      i += 1;
+    }
+  }
+
+  let inList = false;
+  const flushList = () => {
+    if (inList) {
+      html += "</ul>";
+      inList = false;
+    }
+  };
+
+  for (; i < lines.length; i += 1) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushList();
+      continue;
+    }
+    if (sectionRe.test(trimmed)) {
+      flushList();
+      html += `<h2>${escape(trimmed)}</h2>`;
+      continue;
+    }
+    if (/^([•\-*]|\d+\.)\s+/.test(trimmed)) {
+      if (!inList) {
+        html += "<ul>";
+        inList = true;
+      }
+      html += `<li>${escape(trimmed.replace(/^([•\-*]|\d+\.)\s+/, ""))}</li>`;
+      continue;
+    }
+    flushList();
+    html += `<p>${escape(trimmed)}</p>`;
+  }
+  flushList();
+
+  if (!html) {
+    return `<div class="block">${escape(text)}</div>`;
+  }
+  return html;
+}
+
+function CopyButton({
+  text,
+  fullWidth,
 }: {
-  title: string;
-  items: string[];
-  empty: string;
+  text: string;
+  fullWidth?: boolean;
 }) {
-  const text = items.join(" · ") || empty;
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--ink)]">{title}</h3>
-        <CopyButton text={text} />
-      </div>
-      {items.length ? (
-        <ul className="flex flex-wrap gap-2">
-          {items.map((item) => (
-            <li
-              key={item}
-              className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--ink)]"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-[var(--muted)]">{empty}</p>
-      )}
-    </section>
-  );
-}
-
-function ResultBlock({ title, body }: { title: string; body: string }) {
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--ink)]">{title}</h3>
-        <CopyButton text={body} />
-      </div>
-      <div className="max-w-full whitespace-pre-wrap break-words rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm leading-relaxed text-[var(--ink)]">
-        {body}
-      </div>
-    </section>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   return (
     <button
       type="button"
-      className="text-link inline-flex min-h-10 items-center text-sm active:opacity-70"
+      className={
+        fullWidth
+          ? "btn-secondary w-full"
+          : "text-link inline-flex min-h-10 items-center text-sm active:opacity-70"
+      }
       onClick={async () => {
         await navigator.clipboard.writeText(text);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? "Copiato" : "Copia"}
+      {copied ? "Copiato" : "Copia testo"}
     </button>
   );
 }

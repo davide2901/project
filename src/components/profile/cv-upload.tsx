@@ -32,8 +32,8 @@ export function CvUpload({ onExtracted }: CvUploadProps) {
       <div className="space-y-1">
         <p className="label-caps">Carica CV</p>
         <p className="text-sm text-[var(--muted)]">
-          PDF, DOCX o foto del CV: lo analizziamo e precompiliamo il profilo.
-          Controlla sempre i campi prima di salvare.
+          PDF, DOCX o foto: lo analizziamo e precompiliamo i campi sotto.
+          Controlla sempre e premi Salva profilo.
         </p>
       </div>
 
