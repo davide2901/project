@@ -18,10 +18,13 @@ function asset(path: string, baseUrl = ""): string {
 }
 
 function motherLanguage(cv: EuropeanCv): string | null {
-  const mother = cv.languages.find((l) =>
-    /madrelingua|nativo|native|materna/i.test(l.level),
+  const explicit = cv.languages.find((l) =>
+    /madrelingua|nativo|native|materna|ottimo/i.test(l.level),
   );
-  return mother?.language ?? null;
+  if (explicit) return explicit.language;
+
+  const italian = cv.languages.find((l) => /italian/i.test(l.language));
+  return italian?.language ?? null;
 }
 
 function otherLanguages(cv: EuropeanCv): string {
@@ -132,11 +135,11 @@ export function renderEuropeanCvHtml(cv: EuropeanCv, baseUrl = ""): string {
       )
     : "";
 
+  const mainWork = renderSection("Esperienza lavorativa", renderWorkEntries(cv));
   const mainEducation = renderSection(
     "Istruzione e formazione",
     renderEducationEntries(cv),
   );
-  const mainWork = renderSection("Esperienza lavorativa", renderWorkEntries(cv));
 
   return `<div class="ep-root">
   <aside class="ep-sidebar">
@@ -361,7 +364,9 @@ export function europeanCvDocxFields(cv: EuropeanCv) {
     email: cv.email?.trim() ?? "",
     phone: cv.phone?.trim() ?? "",
     location: cv.location?.trim() ?? "",
-    nationality: mother ? "Italiana" : "",
+    nationality: cv.location?.toLowerCase().includes("ital") || mother
+      ? "Italiana"
+      : "",
     summary: cv.summary?.trim() ?? "",
     education_block: educationBlock,
     work_block: workBlock,

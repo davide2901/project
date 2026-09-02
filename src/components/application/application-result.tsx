@@ -450,8 +450,8 @@ function ExportActions({
         Esporta CV
       </h3>
       <p className="text-sm text-[var(--muted)]">
-        Esporta con il template Europass (stesso layout del file Word ufficiale): PDF o
-        documento Word modificabile.
+        Esporta con il template Europass. Nel dialogo di stampa PDF disattiva
+        «Intestazioni e piè di pagina» per un layout pulito.
       </p>
       <button
         type="button"
