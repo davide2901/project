@@ -15,12 +15,21 @@ import {
   DISCOVERY_ERROR_FALLBACK,
   toUserFacingError,
 } from "@/lib/ai/user-facing-error";
+import {
+  buildDiscoveryAngles,
+  DISCOVERY_OFFER_CAP,
+  mergeDiscoveryOffers,
+  type DiscoveryAngle,
+} from "@/lib/discovery/multi-search";
 import type { JobPreference } from "@/lib/types/database";
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
-/** Budget ricerca web (secondi) prima di passare al JSON senza grounding. */
+/** Budget per angolo di ricerca (ms) nel percorso full/cron. */
 const SEARCH_BUDGET_MS = Number(process.env.DISCOVERY_SEARCH_MS ?? 18_000);
+
+/** Offerte richieste per singola query parallela. */
+const OFFERS_PER_ANGLE = 5;
 
 export type DiscoveryProfileInput = {
   full_name: string | null;
@@ -31,7 +40,7 @@ export type DiscoveryProfileInput = {
 };
 
 export type DiscoverOptions = {
-  /** `interactive` = una chiamata grounded; `full` = ricerca + JSON (cron). */
+  /** `interactive` = ricerche parallele grounded; `full` = note + JSON (cron). */
   mode?: "interactive" | "full";
 };
 
@@ -138,6 +147,13 @@ function preferenceAllows(
   return true;
 }
 
+function isQuotaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
+    msg,
+  );
+}
+
 async function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
@@ -156,30 +172,19 @@ async function withTimeout<T>(
   }
 }
 
-async function collectSearchNotes(
+async function collectSearchNotesForAngle(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
+  angle: DiscoveryAngle,
 ): Promise<string | null> {
-  const skills = profile.skills.slice(0, 12).join(", ") || "non specificate";
-  const companies =
-    profile.companies_of_interest.slice(0, 8).join(", ") || "nessuna";
-  const pref =
-    profile.job_preference === "lavoro"
-      ? "solo lavoro (no stage)"
-      : profile.job_preference === "stage"
-        ? "solo stage/tirocinio/internship"
-        : "lavoro o stage";
-
   const t0 = Date.now();
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: `Cerca offerte di lavoro reali in Italia (o remote IT) adatte a questo profilo.
-Preferenza: ${pref}.
-Competenze: ${skills}.
-Aziende di interesse: ${companies}.
+      contents: `Cerca offerte di lavoro reali sul web.
+Focus ricerca: ${angle.focus}.
 
-Elenca fino a 8 offerte trovate sul web con: azienda, ruolo, luogo, tipo (lavoro/stage), URL se disponibile, breve descrizione, perché matcha.
+Elenca fino a ${OFFERS_PER_ANGLE} offerte con: azienda, ruolo, luogo, tipo (lavoro/stage), URL se disponibile, breve descrizione, perché matcha il profilo (${profile.skills.slice(0, 8).join(", ") || "vedi CV"}).
 Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
       config: {
         temperature: 0.35,
@@ -188,24 +193,21 @@ Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
     });
     const text = response.text?.trim() || null;
     logDiscovery("search_notes_ok", {
+      angle: angle.id,
       ms: Date.now() - t0,
       chars: text?.length ?? 0,
     });
-    return text;
+    return text ? `[${angle.label}]\n${text}` : null;
   } catch (err) {
     logDiscovery("search_notes_error", {
+      angle: angle.id,
       ms: Date.now() - t0,
       error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+      quota: isQuotaError(err),
     });
+    if (isQuotaError(err)) throw err;
     return null;
   }
-}
-
-function isQuotaError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err ?? "");
-  return /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
-    msg,
-  );
 }
 
 async function generateDiscoveryJson(
@@ -258,21 +260,25 @@ offers può essere [].`,
   }
 }
 
-/**
- * Una sola chiamata: Google Search + testo JSON (senza responseMimeType).
- * Più veloce del two-step; adatta al bottone "Cerca offerte" su Vercel.
- */
-async function discoverInteractiveSingleCall(
+/** Una ricerca grounded → JSON, focalizzata su un angolo. */
+async function discoverAngleGrounded(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
+  angle: DiscoveryAngle,
 ): Promise<DiscoveryResult> {
   const systemInstruction = `${buildDiscoverySystemPrompt(profile)}
 
-Usa la ricerca web. Alla fine rispondi SOLO con un oggetto JSON (niente markdown fuori dal JSON) con chiavi "offers" e "search_notes".`;
+Focus di questa ricerca: ${angle.focus}.
+Usa la ricerca web. Restituisci SOLO JSON con "offers" (max ${OFFERS_PER_ANGLE}) e "search_notes".`;
+
   const contents = `${buildDiscoveryUserPrompt(profile)}
 
+ANGOLO DI RICERCA: ${angle.label}
+${angle.focus}
+
 Dopo la ricerca, restituisci SOLO JSON:
-{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":null,"snippet":"...","match_reason":"..."}],"search_notes":["..."]}`;
+{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":null,"snippet":"...","match_reason":"..."}],"search_notes":["..."]}
+Massimo ${OFFERS_PER_ANGLE} offerte per questo angolo.`;
 
   const t0 = Date.now();
   const response = await ai.models.generateContent({
@@ -285,12 +291,80 @@ Dopo la ricerca, restituisci SOLO JSON:
     },
   });
   const parsed = parseDiscovery(response.text ?? "");
-  logDiscovery("interactive_ok", {
+  logDiscovery("angle_ok", {
+    angle: angle.id,
     ms: Date.now() - t0,
     offers: parsed.offers.length,
     chars: response.text?.length ?? 0,
   });
-  return parsed;
+  return {
+    ...parsed,
+    offers: parsed.offers.slice(0, OFFERS_PER_ANGLE),
+    search_notes: [
+      `Angolo «${angle.label}»: ${parsed.offers.length} offerte.`,
+      ...(parsed.search_notes ?? []),
+    ],
+  };
+}
+
+/**
+ * 2–3 ricerche Google parallele (skills/tipo/aziende), poi merge + dedupe.
+ */
+async function discoverInteractiveMultiSearch(
+  ai: GoogleGenAI,
+  profile: DiscoveryProfileInput,
+): Promise<DiscoveryResult> {
+  const angles = buildDiscoveryAngles(profile);
+  logDiscovery("multi_start", {
+    angles: angles.map((a) => a.id),
+  });
+
+  const settled = await Promise.allSettled(
+    angles.map((angle) => discoverAngleGrounded(ai, profile, angle)),
+  );
+
+  const batches: DiscoveryResult["offers"][] = [];
+  const notes: string[] = [
+    `Ricerche parallele: ${angles.map((a) => a.label).join(", ")}.`,
+  ];
+  let quotaHit: unknown = null;
+  let hardFail: unknown = null;
+
+  settled.forEach((outcome, i) => {
+    const angle = angles[i]!;
+    if (outcome.status === "fulfilled") {
+      batches.push(outcome.value.offers);
+      notes.push(...(outcome.value.search_notes ?? []).slice(0, 2));
+      return;
+    }
+    const err = outcome.reason;
+    logDiscovery("angle_fail", {
+      angle: angle.id,
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+      quota: isQuotaError(err),
+    });
+    if (isQuotaError(err)) quotaHit = err;
+    else hardFail = err;
+    notes.push(`Angolo «${angle.label}» non riuscito.`);
+  });
+
+  if (batches.length === 0) {
+    if (quotaHit) throw quotaHit;
+    if (hardFail) throw hardFail;
+    return {
+      offers: [],
+      search_notes: notes.length
+        ? notes
+        : ["Nessun risultato dalle ricerche parallele."],
+    };
+  }
+
+  const offers = mergeDiscoveryOffers(batches, DISCOVERY_OFFER_CAP);
+  logDiscovery("multi_merged", {
+    batches: batches.length,
+    offers: offers.length,
+  });
+  return { offers, search_notes: notes };
 }
 
 async function discoverFullTwoStep(
@@ -299,16 +373,37 @@ async function discoverFullTwoStep(
 ): Promise<DiscoveryResult> {
   const systemInstruction = buildDiscoverySystemPrompt(profile);
   const schema = discoveryResultJsonSchema as Record<string, unknown>;
+  const angles = buildDiscoveryAngles(profile);
 
-  const searchRace = await withTimeout(
-    collectSearchNotes(ai, profile),
-    SEARCH_BUDGET_MS,
-  );
-  const searchNotes = searchRace.ok ? searchRace.value : null;
-  if (!searchRace.ok) {
-    logDiscovery("search_notes_timeout", { budgetMs: SEARCH_BUDGET_MS });
+  const noteParts: string[] = [];
+  try {
+    const noteResults = await Promise.all(
+      angles.map(async (angle) => {
+        const raced = await withTimeout(
+          collectSearchNotesForAngle(ai, profile, angle),
+          SEARCH_BUDGET_MS,
+        );
+        if (!raced.ok) {
+          logDiscovery("search_notes_timeout", {
+            angle: angle.id,
+            budgetMs: SEARCH_BUDGET_MS,
+          });
+          return null;
+        }
+        return raced.value;
+      }),
+    );
+    for (const part of noteResults) {
+      if (part) noteParts.push(part);
+    }
+  } catch (err) {
+    if (isQuotaError(err)) throw err;
+    logDiscovery("search_notes_batch_error", {
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+    });
   }
 
+  const searchNotes = noteParts.length > 0 ? noteParts.join("\n\n---\n\n") : null;
   const basePrompt = buildDiscoveryUserPrompt(profile);
   const contents = searchNotes
     ? `${basePrompt}
@@ -316,7 +411,8 @@ async function discoverFullTwoStep(
 ---
 NOTE DALLA RICERCA WEB (fonte primaria; non inventare offerte assenti da qui):
 ${searchNotes}
----`
+---
+Restituisci fino a ${DISCOVERY_OFFER_CAP} offerte uniche.`
     : `${basePrompt}
 
 Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spiega in search_notes, oppure solo offerte di cui sei molto sicuro senza inventare URL.`;
@@ -332,8 +428,16 @@ Nota: ricerca web non disponibile o troppo lenta. Restituisci offers: [] e spieg
     notes.push(
       "Ricerca web non disponibile in questa chiamata; risultati senza grounding.",
     );
+  } else {
+    notes.unshift(
+      `Note da ${noteParts.length} ricerche: ${angles.map((a) => a.label).join(", ")}.`,
+    );
   }
-  return { ...result, search_notes: notes };
+  return {
+    ...result,
+    offers: result.offers.slice(0, DISCOVERY_OFFER_CAP),
+    search_notes: notes,
+  };
 }
 
 export async function discoverOffersForProfile(
@@ -364,7 +468,7 @@ export async function discoverOffersForProfile(
 
     if (mode === "interactive") {
       try {
-        result = await discoverInteractiveSingleCall(ai, profile);
+        result = await discoverInteractiveMultiSearch(ai, profile);
       } catch (err) {
         logDiscovery("interactive_fail_fallback_full", {
           error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
@@ -379,9 +483,9 @@ export async function discoverOffersForProfile(
 
     const filtered = {
       ...result,
-      offers: result.offers.filter((o) =>
-        preferenceAllows(o.position_type, profile.job_preference),
-      ),
+      offers: result.offers
+        .filter((o) => preferenceAllows(o.position_type, profile.job_preference))
+        .slice(0, DISCOVERY_OFFER_CAP),
     };
     logDiscovery("done", {
       mode,

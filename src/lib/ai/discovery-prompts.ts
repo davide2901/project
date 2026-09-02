@@ -22,7 +22,7 @@ REGOLE:
 1. Se sotto trovi NOTE DALLA RICERCA WEB, usale come fonte primaria: non inventare offerte assenti da quelle note.
 2. NON inventare URL: source_url solo se presente nelle note o nell'offerta; altrimenti null.
 3. Non inventare competenze del candidato: match_reason deve basarsi solo su skills/CV forniti.
-4. Massimo 8 offerte, preferibilmente 4–6 di buona qualità.
+4. Massimo 12 offerte, preferibilmente 6–10 di buona qualità.
 5. ${preferenceHint}
 6. Se companies_of_interest è valorizzato, privilegia offerte di quelle aziende o simili.
 7. Classifica position_type correttamente (lavoro | stage | non_chiaro).

@@ -18,8 +18,8 @@ export const discoveredOfferItemSchema = z.object({
 export const discoveryResultSchema = z.object({
   offers: z
     .array(discoveredOfferItemSchema)
-    .max(8)
-    .describe("Fino a 8 offerte allineate al profilo"),
+    .max(12)
+    .describe("Fino a 12 offerte allineate al profilo"),
   search_notes: z
     .array(z.string())
     .describe("Note su limiti della ricerca / fonti non trovate"),
@@ -35,7 +35,7 @@ export const discoveryResultJsonSchema = {
   properties: {
     offers: {
       type: "array",
-      maxItems: 8,
+      maxItems: 12,
       items: {
         type: "object",
         additionalProperties: false,
