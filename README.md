@@ -110,4 +110,4 @@ Guida in 4 passi: [`docs/SETUP-MOBILE.md`](docs/SETUP-MOBILE.md).
 
 ## Gemini
 
-Prompt + JSON schema in `src/lib/ai/`. Chiave da [Google AI Studio](https://aistudio.google.com/apikey). Modello default: `gemini-2.5-flash` (override con `GEMINI_MODEL`).
+Prompt + JSON schema in `src/lib/ai/`. Chiave da [Google AI Studio](https://aistudio.google.com/apikey). Modello default: `gemini-3.5-flash` (override con `GEMINI_MODEL`).

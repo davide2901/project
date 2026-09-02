@@ -23,7 +23,7 @@ import {
 } from "@/lib/discovery/multi-search";
 import type { JobPreference } from "@/lib/types/database";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 
 /** Budget per angolo di ricerca (ms) nel percorso full/cron. */
 const SEARCH_BUDGET_MS = Number(process.env.DISCOVERY_SEARCH_MS ?? 18_000);
@@ -309,6 +309,7 @@ Massimo ${OFFERS_PER_ANGLE} offerte per questo angolo.`;
 
 /**
  * 2–3 ricerche Google parallele (skills/tipo/aziende), poi merge + dedupe.
+ * Se il grounding è in quota, fallback a una generazione JSON senza Search.
  */
 async function discoverInteractiveMultiSearch(
   ai: GoogleGenAI,
@@ -348,23 +349,43 @@ async function discoverInteractiveMultiSearch(
     notes.push(`Angolo «${angle.label}» non riuscito.`);
   });
 
-  if (batches.length === 0) {
-    if (quotaHit) throw quotaHit;
-    if (hardFail) throw hardFail;
-    return {
-      offers: [],
-      search_notes: notes.length
-        ? notes
-        : ["Nessun risultato dalle ricerche parallele."],
-    };
+  if (batches.length > 0) {
+    const offers = mergeDiscoveryOffers(batches, DISCOVERY_OFFER_CAP);
+    logDiscovery("multi_merged", {
+      batches: batches.length,
+      offers: offers.length,
+    });
+    return { offers, search_notes: notes };
   }
 
-  const offers = mergeDiscoveryOffers(batches, DISCOVERY_OFFER_CAP);
-  logDiscovery("multi_merged", {
-    batches: batches.length,
-    offers: offers.length,
+  // Grounding esaurito o fallito: prova JSON senza Search (stesso modello).
+  logDiscovery("grounding_fallback_json", {
+    quota: Boolean(quotaHit),
   });
-  return { offers, search_notes: notes };
+  try {
+    const systemInstruction = buildDiscoverySystemPrompt(profile);
+    const schema = discoveryResultJsonSchema as Record<string, unknown>;
+    const result = await generateDiscoveryJson(
+      ai,
+      `${buildDiscoveryUserPrompt(profile)}
+
+Nota: ricerca web non disponibile (quota o errore). Restituisci solo offerte di cui sei molto sicuro, senza inventare URL; preferisci offers: [] se non sei sicuro.`,
+      systemInstruction,
+      schema,
+    );
+    return {
+      ...result,
+      search_notes: [
+        ...notes,
+        "Ricerca web non disponibile; risultati senza grounding.",
+        ...(result.search_notes ?? []),
+      ],
+    };
+  } catch (err) {
+    if (quotaHit) throw quotaHit;
+    if (hardFail) throw hardFail;
+    throw err;
+  }
 }
 
 async function discoverFullTwoStep(

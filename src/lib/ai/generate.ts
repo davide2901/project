@@ -16,7 +16,7 @@ import { applyPreferenceFilter } from "@/lib/application/preference";
 import type { CvSourceKind } from "@/lib/cv/resolve-source";
 import type { JobPreference } from "@/lib/types/database";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 
 type GenerateInput = {
   offerInput: string;

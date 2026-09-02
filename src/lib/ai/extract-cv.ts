@@ -8,7 +8,7 @@ import {
 } from "@/lib/ai/cv-extract-schema";
 import { isAiMockEnabled } from "@/lib/ai/mock";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 const MAX_BYTES = 10 * 1024 * 1024;
 
 const PDF_TYPES = new Set(["application/pdf"]);

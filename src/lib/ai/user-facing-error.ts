@@ -23,6 +23,14 @@ export function toUserFacingError(
     return "Limite richieste AI raggiunto. Attendi qualche minuto e riprova.";
   }
 
+  if (
+    /no longer available|is not found for API version|update your code to use models\//i.test(
+      trimmed,
+    )
+  ) {
+    return "Modello AI non più disponibile. Aggiorna GEMINI_MODEL e riprova.";
+  }
+
   // Corpi JSON Gemini / Google API
   if (
     trimmed.startsWith("{") ||
