@@ -32,8 +32,11 @@ export function HeaderMenu({ email }: Props) {
 export function SignOutButton() {
   return (
     <form action={signOut}>
-      <button type="submit" className="btn-secondary w-full sm:w-auto">
-        Esci
+      <button
+        type="submit"
+        className="btn-secondary w-full border-[color-mix(in_oklab,#b91c1c_28%,var(--line))] text-[#9f1239]"
+      >
+        Esci dall&apos;account
       </button>
     </form>
   );

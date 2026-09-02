@@ -33,16 +33,18 @@ export function BottomNav() {
   const pathname = usePathname();
   const { tab, navigateTab, isTabMode } = useTabNav();
 
-  const activeId: TabId = isTabMode
+  const activeId: TabId | null = isTabMode
     ? tab
     : pathToTab(pathname) ??
       (pathname.startsWith("/archivio") || pathname.startsWith("/candidatura")
         ? "archivio"
-        : pathname.startsWith("/profilo")
+        : pathname.startsWith("/profilo") || pathname.startsWith("/account")
           ? "profilo"
           : pathname.startsWith("/statistiche")
             ? "statistiche"
-            : "home");
+            : pathname.startsWith("/home")
+              ? "home"
+              : null);
 
   return (
     <nav
@@ -55,7 +57,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto flex max-w-3xl items-stretch justify-around px-1 pt-1">
         {ITEMS.map((item) => {
-          const active = item.id === activeId;
+          const active = activeId != null && item.id === activeId;
           const Icon = item.icon;
           return (
             <li key={item.id} className="flex-1">
