@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Viewport } from "next";
 
 import { createClient } from "@/lib/supabase/server";
+
+export const viewport: Viewport = {
+  themeColor: "#070f1a",
+  colorScheme: "dark",
+  viewportFit: "cover",
+};
 
 export default async function HomePage() {
   const supabase = await createClient();

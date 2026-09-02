@@ -270,6 +270,77 @@ textarea.field {
   border-color: color-mix(in oklab, var(--sand) 55%, transparent);
 }
 
+/* Login / register — stesso tema della landing */
+.marketing-auth .field {
+  background: rgb(255 255 255 / 0.06);
+  border-color: rgb(232 220 200 / 0.22);
+  color: var(--sand);
+}
+
+.marketing-auth .field::placeholder {
+  color: color-mix(in oklab, var(--sand) 42%, transparent);
+}
+
+.marketing-auth .field:focus {
+  border-color: color-mix(in oklab, var(--sand) 55%, transparent);
+  box-shadow: 0 0 0 3px rgb(232 220 200 / 0.12);
+}
+
+.marketing-auth .btn-primary {
+  background: var(--sand);
+  color: var(--night);
+}
+
+.marketing-auth .btn-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--sand) 88%, white);
+}
+
+.marketing-auth .btn-secondary {
+  border-color: color-mix(in oklab, var(--sand) 35%, transparent);
+  background: transparent;
+  color: var(--sand);
+}
+
+.marketing-auth .btn-secondary:hover {
+  background: rgb(232 220 200 / 0.08);
+  border-color: color-mix(in oklab, var(--sand) 55%, transparent);
+}
+
+.marketing-auth .text-link {
+  color: var(--sand);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.marketing-auth .text-link:hover {
+  color: color-mix(in oklab, var(--sand) 88%, white);
+}
+
+.marketing-auth .auth-alert-error {
+  border: 1px solid rgb(248 113 113 / 0.35);
+  background: rgb(127 29 29 / 0.35);
+  color: #fecaca;
+}
+
+.marketing-auth .auth-alert-info {
+  border: 1px solid rgb(232 220 200 / 0.22);
+  background: rgb(255 255 255 / 0.06);
+  color: var(--sand);
+}
+
+.marketing-auth .auth-or-line {
+  background: rgb(232 220 200 / 0.18);
+}
+
+.marketing-auth .auth-or-label {
+  background: var(--night);
+  color: color-mix(in oklab, var(--sand) 55%, transparent);
+}
+
+.marketing-auth label {
+  color: color-mix(in oklab, var(--sand) 82%, white);
+}
+
 .btn-stack-mobile {
   width: 100%;
 }

@@ -11,24 +11,47 @@ import {
 
 const initial: AuthActionState = { error: null };
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  variant?: "app" | "marketing";
+};
+
+export function RegisterForm({ variant = "app" }: RegisterFormProps) {
   const [state, action, pending] = useActionState(signUpWithPassword, initial);
+  const errorClass =
+    variant === "marketing"
+      ? "auth-alert-error rounded-md px-3 py-2 text-sm"
+      : "rounded-md bg-red-50 px-3 py-2 text-sm text-red-700";
+  const infoClass =
+    variant === "marketing"
+      ? "auth-alert-info rounded-lg px-4 py-5 text-sm"
+      : "rounded-lg border border-[var(--line)] bg-[var(--tint)] px-4 py-5 text-sm text-[var(--ink)]";
+  const orLabelClass =
+    variant === "marketing"
+      ? "auth-or-label relative z-10 px-3"
+      : "relative z-10 bg-[var(--background)] px-3";
+  const orLineClass =
+    variant === "marketing"
+      ? "auth-or-line absolute inset-x-0 top-1/2 h-px"
+      : "absolute inset-x-0 top-1/2 h-px bg-[var(--line)]";
+  const labelClass =
+    variant === "marketing"
+      ? "text-sm font-medium"
+      : "text-sm font-medium text-[var(--ink)]";
+  const mutedClass =
+    variant === "marketing" ? "text-[var(--sand-muted)]" : "text-[var(--muted)]";
 
   if (state.needsEmailConfirm) {
     return (
       <div className="space-y-6">
-        <div className="rounded-lg border border-[var(--line)] bg-[var(--tint)] px-4 py-5 text-sm text-[var(--ink)]">
+        <div className={infoClass}>
           <p className="font-medium">Controlla la tua email</p>
-          <p className="mt-1 text-[var(--muted)]">
+          <p className={`mt-1 ${mutedClass}`}>
             Ti abbiamo inviato un link di conferma. Dopo la verifica potrai
             accedere e completare il profilo.
           </p>
         </div>
-        <p className="text-center text-sm text-[var(--muted)]">
-          <Link
-            href="/login"
-            className="text-link"
-          >
+        <p className={`text-center text-sm ${mutedClass}`}>
+          <Link href="/login" className="text-link">
             Torna al login
           </Link>
         </p>
@@ -40,7 +63,7 @@ export function RegisterForm() {
     <div className="space-y-6">
       <form action={action} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="full_name" className="text-sm font-medium text-[var(--ink)]">
+          <label htmlFor="full_name" className={labelClass}>
             Nome
           </label>
           <input
@@ -53,7 +76,7 @@ export function RegisterForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-[var(--ink)]">
+          <label htmlFor="email" className={labelClass}>
             Email
           </label>
           <input
@@ -67,7 +90,7 @@ export function RegisterForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-[var(--ink)]">
+          <label htmlFor="password" className={labelClass}>
             Password
           </label>
           <input
@@ -82,7 +105,7 @@ export function RegisterForm() {
           />
         </div>
         {state.error ? (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          <p className={errorClass} role="alert">
             {state.error}
           </p>
         ) : null}
@@ -91,9 +114,13 @@ export function RegisterForm() {
         </button>
       </form>
 
-      <div className="relative text-center text-xs uppercase tracking-wider text-[var(--muted)]">
-        <span className="relative z-10 bg-[var(--background)] px-3">oppure</span>
-        <span className="absolute inset-x-0 top-1/2 h-px bg-[var(--line)]" />
+      <div
+        className={`relative text-center text-xs uppercase tracking-wider ${
+          variant === "marketing" ? "text-[var(--sand-muted)]" : "text-[var(--muted)]"
+        }`}
+      >
+        <span className={orLabelClass}>oppure</span>
+        <span className={orLineClass} />
       </div>
 
       <form action={signInWithGoogle}>
@@ -103,12 +130,9 @@ export function RegisterForm() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-[var(--muted)]">
+      <p className={`text-center text-sm ${mutedClass}`}>
         Hai già un account?{" "}
-        <Link
-          href="/login"
-          className="text-link"
-        >
+        <Link href="/login" className="text-link">
           Accedi
         </Link>
       </p>
