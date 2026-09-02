@@ -415,7 +415,7 @@ Non ripetere offerte già trovate. Se proprio non hai nulla di sensato, offers: 
 async function discoverFullTwoStep(
   ai: GoogleGenAI,
   profile: DiscoveryProfileInput,
-): Promise<DiscoveryResult> {
+): Promise<DiscoveryOutcome> {
   const systemInstruction = buildDiscoverySystemPrompt(profile);
   const schema = discoveryResultJsonSchema as Record<string, unknown>;
   const angles = buildDiscoveryAngles(profile);
