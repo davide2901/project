@@ -19,17 +19,22 @@ function asset(path: string, baseUrl = ""): string {
 
 function motherLanguage(cv: EuropeanCv): string | null {
   const explicit = cv.languages.find((l) =>
-    /madrelingua|nativo|native|materna|ottimo/i.test(l.level),
+    /madrelingua|nativo|native|materna/i.test(l.level),
   );
   if (explicit) return explicit.language;
 
-  const italian = cv.languages.find((l) => /italian/i.test(l.language));
+  const italian = cv.languages.find((l) => /^italian/i.test(l.language));
   return italian?.language ?? null;
 }
 
 function otherLanguages(cv: EuropeanCv): string {
+  const mother = motherLanguage(cv)?.toLowerCase() ?? "";
   return cv.languages
-    .filter((l) => !/madrelingua|nativo|native|materna/i.test(l.level))
+    .filter((l) => {
+      if (/madrelingua|nativo|native|materna/i.test(l.level)) return false;
+      if (mother && l.language.toLowerCase() === mother) return false;
+      return true;
+    })
     .map((l) => (l.level ? `${l.language} (${l.level})` : l.language))
     .join(" | ");
 }
