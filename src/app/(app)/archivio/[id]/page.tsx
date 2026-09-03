@@ -82,6 +82,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         initialStatus={row.status}
         figmaCvUrl={profile?.figma_cv_url ?? null}
         figmaPortfolioUrl={profile?.figma_portfolio_url ?? null}
+        showInterviewPrep
       />
     </div>
   );

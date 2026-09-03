@@ -30,6 +30,7 @@ export async function getCompanyIntel(input: {
   location?: string | null;
   offerId?: string | null;
   forceRefresh?: boolean;
+  existingContext?: string | null;
 }): Promise<CompanyIntelResult> {
   const supabase = await createClient();
   const {
@@ -66,6 +67,8 @@ export async function getCompanyIntel(input: {
       companyName: input.companyName,
       roleTitle: input.roleTitle,
       location: input.location,
+      existingContext: input.existingContext,
+      forceWeb: Boolean(input.forceRefresh),
     });
   } catch (err) {
     return {

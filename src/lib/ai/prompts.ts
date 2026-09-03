@@ -74,8 +74,7 @@ ${profile.cv_fallback_text?.trim() || "(CV non fornito: usa solo le competenze e
 export function buildUserPrompt(offerInput: string): string {
   return `Analizza questa offerta di lavoro (testo e/o URL).
 
-Se sotto trovi NOTE RICERCA AZIENDA, usale come unica fonte per company_research.
-Non inventare fatti aziendali.
+Per company_research usa solo l'offerta (e fatti evidenti dal testo). Non inventare recensioni, numeri o fonti web.
 
 Poi genera il pacchetto candidatura come JSON strutturato.
 Ricorda:

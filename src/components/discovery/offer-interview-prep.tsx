@@ -18,6 +18,7 @@ type Props = {
   roleTitle: string;
   location?: string | null;
   offerId?: string | null;
+  existingContext?: string | null;
 };
 
 export function OfferInterviewPrep({
@@ -25,6 +26,7 @@ export function OfferInterviewPrep({
   roleTitle,
   location,
   offerId,
+  existingContext,
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export function OfferInterviewPrep({
         location,
         offerId,
         forceRefresh: force,
+        existingContext,
       });
       if (!res.ok) {
         setError(res.error);
@@ -77,7 +80,7 @@ export function OfferInterviewPrep({
           disabled={pending}
           onClick={() => load(false)}
         >
-          {pending ? "Cerco opinioni e fonti…" : "Prepara il colloquio"}
+          {pending ? "Cerco nel materiale della candidatura…" : "Prepara il colloquio"}
         </button>
       )}
 
@@ -191,7 +194,7 @@ export function OfferInterviewPrep({
               disabled={pending}
               onClick={() => load(true)}
             >
-              {pending ? "Aggiorno…" : "Aggiorna ricerca"}
+              {pending ? "Aggiorno…" : "Aggiorna con ricerca web"}
             </button>
           </div>
         ) : null}

@@ -116,6 +116,10 @@ export async function fetchCompanyIntelFromWeb(input: {
   companyName: string;
   roleTitle: string;
   location?: string | null;
+  /** Testo già prodotto in generazione candidatura: evita Google Search. */
+  existingContext?: string | null;
+  /** Se true, usa Google Search anche se c'è già contesto. */
+  forceWeb?: boolean;
 }): Promise<CompanyIntelPayload> {
   if (isAiMockEnabled()) {
     await new Promise((r) => setTimeout(r, 400));
@@ -123,7 +127,17 @@ export async function fetchCompanyIntelFromWeb(input: {
   }
 
   const ai = getClient();
-  const systemInstruction = `Sei un ricercatore onesto per candidati lavoro in Italia/EU.
+  const hasContext = Boolean(input.existingContext?.trim()) && !input.forceWeb;
+  const systemInstruction = hasContext
+    ? `Sei un coach colloquio onesto per candidati in Italia/EU.
+Hai già il pacchetto candidatura (ricerca azienda, skill, gap, lettera).
+REGOLE:
+1. NON inventare recensioni, numeri o fonti web.
+2. Usa SOLO il contesto fornito; se manca un dato → insufficiente / confidence bassa.
+3. sources: solo URL già presenti nel contesto, altrimenti label senza url.
+4. salary_hint solo se il contesto cita un range; altrimenti null.
+5. Rispondi SOLO JSON conforme allo schema. Italiano.`
+    : `Sei un ricercatore onesto per candidati lavoro in Italia/EU.
 Usa la ricerca web (Glassdoor, Levels.fyi, TeamBlind, LinkedIn, blog, rassegna stampa).
 REGOLE:
 1. NON inventare recensioni o citazioni.
@@ -133,7 +147,16 @@ REGOLE:
 5. Rispondi SOLO JSON conforme allo schema.
 6. Scrivi in italiano.`;
 
-  const contents = `Prepara un brief per il colloquio.
+  const contents = hasContext
+    ? `Prepara un brief colloquio da questo materiale già generato (nessuna ricerca web).
+Azienda: ${input.companyName}
+Ruolo: ${input.roleTitle}
+Luogo: ${input.location ?? "non indicato"}
+
+--- CONTESTO CANDIDATURA ---
+${input.existingContext!.trim().slice(0, 12000)}
+---`
+    : `Prepara un brief per il colloquio.
 Azienda: ${input.companyName}
 Ruolo: ${input.roleTitle}
 Luogo: ${input.location ?? "non indicato"}
@@ -145,11 +168,21 @@ Includi link alle fonti quando disponibili.`;
     const response = await ai.models.generateContent({
       model: MODEL,
       contents,
-      config: {
-        systemInstruction,
-        temperature: 0.3,
-        tools: [{ googleSearch: {} }],
-      },
+      config: hasContext
+        ? {
+            systemInstruction,
+            temperature: 0.25,
+            responseMimeType: "application/json",
+            responseJsonSchema: companyIntelJsonSchema as Record<
+              string,
+              unknown
+            >,
+          }
+        : {
+            systemInstruction,
+            temperature: 0.3,
+            tools: [{ googleSearch: {} }],
+          },
     });
 
     const text = response.text ?? "";
@@ -160,8 +193,8 @@ Includi link alle fonti quando disponibili.`;
       payload = tryParseJsonObject(text);
     }
 
-    // Retry senza tool se il testo non è JSON (grounding a volte non rispetta JSON)
-    if (!payload) {
+    // Retry JSON-only se grounding non ha restituito JSON. Evita una seconda Search.
+    if (!payload && !hasContext) {
       const retry = await ai.models.generateContent({
         model: MODEL,
         contents: `${contents}

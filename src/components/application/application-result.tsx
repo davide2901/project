@@ -3,8 +3,10 @@
 import { useCallback, useState, useTransition } from "react";
 
 import { updateApplicationStatus } from "@/app/actions/application";
+import { OfferInterviewPrep } from "@/components/discovery/offer-interview-prep";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { ApplicationPackage } from "@/lib/ai/schema";
+import { buildInterviewPrepContext } from "@/lib/ai/interview-prep-context";
 import { buildCvPrintHtml } from "@/lib/cv/european-cv-template";
 import { generateEuropassDocx, downloadBlob } from "@/lib/cv/europass-docx";
 import { resolveEuropeanCv } from "@/lib/cv/parse-cv-text";
@@ -26,6 +28,7 @@ export function ApplicationResult({
   figmaCvUrl,
   figmaPortfolioUrl,
   figmaSyncCode,
+  showInterviewPrep = false,
 }: {
   data: ApplicationPackage;
   applicationId?: string;
@@ -34,6 +37,7 @@ export function ApplicationResult({
   figmaCvUrl?: string | null;
   figmaPortfolioUrl?: string | null;
   figmaSyncCode?: string | null;
+  showInterviewPrep?: boolean;
 }) {
   const [openDoc, setOpenDoc] = useState<DocKey | null>(null);
   const close = useCallback(() => setOpenDoc(null), []);
@@ -153,6 +157,14 @@ export function ApplicationResult({
 
       {applicationId && initialStatus ? (
         <StatusPicker applicationId={applicationId} initialStatus={initialStatus} />
+      ) : null}
+
+      {showInterviewPrep ? (
+        <OfferInterviewPrep
+          companyName={data.company_name}
+          roleTitle={data.role_title}
+          existingContext={buildInterviewPrepContext(data)}
+        />
       ) : null}
 
       <ExportActions
@@ -385,7 +397,7 @@ function ExportActions({
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
         setNote(
-          'Nella finestra di stampa: «Salva come PDF», A4, e togli «intestazioni e piè di pagina».',
+          "Nella finestra di stampa: «Salva come PDF», A4, e togli «intestazioni e piè di pagina».",
         );
       } catch {
         setNote("Stampa non riuscita. Riprova.");

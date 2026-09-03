@@ -1,3 +1,15 @@
+export function isQuotaError(err: unknown): boolean {
+  const raw =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : JSON.stringify(err ?? "");
+  return /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
+    raw,
+  );
+}
+
 /**
  * Converte errori SDK/API (spesso JSON grezzo) in messaggi comprensibili.
  */
@@ -15,11 +27,7 @@ export function toUserFacingError(
   const trimmed = raw.trim();
   if (!trimmed) return fallback;
 
-  if (
-    /quota|rate.?limit|RESOURCE_EXHAUSTED|"code"\s*:\s*429|exceeded your current quota/i.test(
-      trimmed,
-    )
-  ) {
+  if (isQuotaError(trimmed)) {
     return "Limite richieste AI raggiunto. Attendi qualche minuto e riprova.";
   }
 
