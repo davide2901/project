@@ -97,7 +97,7 @@ export type ApplicationListItem = Pick<
   | "created_at"
 >;
 
-export type DiscoveredOfferStatus = "new" | "dismissed" | "applied";
+export type DiscoveredOfferStatus = "new" | "watching" | "dismissed" | "applied";
 
 export type SalarySource = "annuncio" | "stima";
 

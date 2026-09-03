@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ApplicationOfferLink } from "@/components/application/application-offer-link";
 import { ApplicationResult } from "@/components/application/application-result";
 import { DeleteApplicationButton } from "@/components/application/delete-application-button";
 import { applicationPackageSchema } from "@/lib/ai/schema";
@@ -70,12 +69,6 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         <DeleteApplicationButton id={row.id} />
       </div>
 
-      <ApplicationOfferLink
-        companyName={row.company_name}
-        roleTitle={row.role_title}
-        offerSource={row.offer_source}
-      />
-
       <ApplicationResult
         data={pkg.data}
         applicationId={row.id}
@@ -83,6 +76,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         figmaCvUrl={profile?.figma_cv_url ?? null}
         figmaPortfolioUrl={profile?.figma_portfolio_url ?? null}
         showInterviewPrep
+        offerSource={row.offer_source}
       />
     </div>
   );

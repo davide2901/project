@@ -165,6 +165,13 @@ body {
   box-shadow: 0 0 0 3px rgb(58 111 154 / 0.22);
 }
 
+.field-compact {
+  min-height: var(--touch);
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.65rem;
+  font-size: 1rem;
+}
+
 textarea.field {
   min-height: 8rem;
   resize: vertical;

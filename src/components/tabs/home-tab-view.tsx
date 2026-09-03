@@ -42,7 +42,12 @@ export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
       {showGuide ? <OnboardingProgress steps={steps} /> : null}
 
       {!needsProfile ? (
-        <DiscoveryPanel offers={data.offers} profileReady={data.profileReady} />
+        <DiscoveryPanel
+          offers={data.offers}
+          profileReady={data.profileReady}
+          skills={data.skills}
+          companiesOfInterest={data.companiesOfInterest}
+        />
       ) : null}
 
       {!needsProfile ? (

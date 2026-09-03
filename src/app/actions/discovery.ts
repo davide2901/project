@@ -34,6 +34,37 @@ function profileReady(p: Profile): boolean {
   );
 }
 
+function offerHistoryRefs(
+  rows: Pick<
+    DiscoveredOffer,
+    "company_name" | "role_title" | "source_url" | "status"
+  >[],
+) {
+  return {
+    existingRows: rows.map((o) => ({
+      company_name: o.company_name,
+      role_title: o.role_title,
+      source_url: o.source_url,
+    })),
+    seen: rows.map((o) => ({
+      company_name: o.company_name,
+      role_title: o.role_title,
+    })),
+    watchlist: rows
+      .filter((o) => o.status === "watching")
+      .map((o) => ({
+        company_name: o.company_name,
+        role_title: o.role_title,
+      })),
+    dismissed: rows
+      .filter((o) => o.status === "dismissed")
+      .map((o) => ({
+        company_name: o.company_name,
+        role_title: o.role_title,
+      })),
+  };
+}
+
 /** Chiude i duplicati già in lista (stessa company+role o stessa URL). */
 async function dismissExistingDuplicates(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,13 +146,15 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
 
   const { data: history } = await supabase
     .from("discovered_offers")
-    .select("company_name, role_title, source_url")
+    .select("company_name, role_title, source_url, status")
     .eq("user_id", user.id);
 
-  const existingRows = (history ?? []) as Pick<
+  const historyRows = (history ?? []) as Pick<
     DiscoveredOffer,
-    "company_name" | "role_title" | "source_url"
+    "company_name" | "role_title" | "source_url" | "status"
   >[];
+  const { existingRows, seen, watchlist, dismissed } =
+    offerHistoryRefs(historyRows);
 
   let result;
   try {
@@ -141,10 +174,9 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
         cv_fallback_text: p.cv_fallback_text,
         job_preference: p.job_preference,
         companies_of_interest: p.companies_of_interest,
-        seen_offers: existingRows.map((o) => ({
-          company_name: o.company_name,
-          role_title: o.role_title,
-        })),
+        seen_offers: seen,
+        watchlist,
+        dismissed,
       },
       { mode: "interactive", allowRefresh: true },
     );
@@ -231,9 +263,31 @@ export async function dismissOffer(
 
   const { error } = await supabase
     .from("discovered_offers")
-    .delete()
+    .update({ status: "dismissed" })
     .eq("id", id)
     .eq("user_id", user.id);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/home");
+  return { ok: true };
+}
+
+export async function setOfferWatching(
+  id: string,
+  watching: boolean,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessione scaduta. Accedi di nuovo." };
+
+  const { error } = await supabase
+    .from("discovered_offers")
+    .update({ status: watching ? "watching" : "new" })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .in("status", watching ? ["new", "watching"] : ["watching", "new"]);
 
   if (error) return { ok: false, error: error.message };
   revalidatePath("/home");
@@ -307,13 +361,15 @@ export async function runDiscoveryForUserId(
 
   const { data: history } = await supabase
     .from("discovered_offers")
-    .select("company_name, role_title, source_url")
+    .select("company_name, role_title, source_url, status")
     .eq("user_id", userId);
 
-  const existingRows = (history ?? []) as Pick<
+  const historyRows = (history ?? []) as Pick<
     DiscoveredOffer,
-    "company_name" | "role_title" | "source_url"
+    "company_name" | "role_title" | "source_url" | "status"
   >[];
+  const { existingRows, seen, watchlist, dismissed } =
+    offerHistoryRefs(historyRows);
 
   let result;
   try {
@@ -324,10 +380,9 @@ export async function runDiscoveryForUserId(
         cv_fallback_text: profile.cv_fallback_text,
         job_preference: profile.job_preference,
         companies_of_interest: profile.companies_of_interest,
-        seen_offers: existingRows.map((o) => ({
-          company_name: o.company_name,
-          role_title: o.role_title,
-        })),
+        seen_offers: seen,
+        watchlist,
+        dismissed,
       },
       { mode: "full", allowRefresh: true },
     );

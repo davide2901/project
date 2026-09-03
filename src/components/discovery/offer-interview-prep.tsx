@@ -19,6 +19,7 @@ type Props = {
   location?: string | null;
   offerId?: string | null;
   existingContext?: string | null;
+  variant?: "link" | "button";
 };
 
 export function OfferInterviewPrep({
@@ -27,6 +28,7 @@ export function OfferInterviewPrep({
   location,
   offerId,
   existingContext,
+  variant = "link",
 }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +78,19 @@ export function OfferInterviewPrep({
       ) : (
         <button
           type="button"
-          className="text-link inline-flex min-h-10 items-center text-sm font-medium"
+          className={
+            variant === "button"
+              ? "btn-secondary w-full text-sm"
+              : "text-link inline-flex min-h-10 items-center text-sm font-medium"
+          }
           disabled={pending}
           onClick={() => load(false)}
         >
-          {pending ? "Cerco nel materiale della candidatura…" : "Prepara il colloquio"}
+          {pending
+            ? "Cerco…"
+            : variant === "button"
+              ? "Apri la preparazione"
+              : "Prepara il colloquio"}
         </button>
       )}
 

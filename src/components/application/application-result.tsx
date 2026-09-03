@@ -3,17 +3,15 @@
 import { useCallback, useState, useTransition } from "react";
 
 import { updateApplicationStatus } from "@/app/actions/application";
-import { OfferInterviewPrep } from "@/components/discovery/offer-interview-prep";
+import { ApplicationFollowupCard } from "@/components/application/application-followup-card";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import type { ApplicationPackage } from "@/lib/ai/schema";
-import { buildInterviewPrepContext } from "@/lib/ai/interview-prep-context";
 import { buildCvPrintHtml } from "@/lib/cv/european-cv-template";
 import { generateEuropassDocx, downloadBlob } from "@/lib/cv/europass-docx";
 import { resolveEuropeanCv } from "@/lib/cv/parse-cv-text";
 import {
   APPLICATION_STATUS_OPTIONS,
   labelPosition,
-  labelStatus,
   normalizeStatus,
 } from "@/lib/application/labels";
 import type { ApplicationStatus } from "@/lib/types/database";
@@ -29,6 +27,7 @@ export function ApplicationResult({
   figmaPortfolioUrl,
   figmaSyncCode,
   showInterviewPrep = false,
+  offerSource = null,
 }: {
   data: ApplicationPackage;
   applicationId?: string;
@@ -38,6 +37,7 @@ export function ApplicationResult({
   figmaPortfolioUrl?: string | null;
   figmaSyncCode?: string | null;
   showInterviewPrep?: boolean;
+  offerSource?: string | null;
 }) {
   const [openDoc, setOpenDoc] = useState<DocKey | null>(null);
   const close = useCallback(() => setOpenDoc(null), []);
@@ -155,16 +155,19 @@ export function ApplicationResult({
         ) : null}
       </header>
 
-      {applicationId && initialStatus ? (
-        <StatusPicker applicationId={applicationId} initialStatus={initialStatus} />
-      ) : null}
-
-      {showInterviewPrep ? (
-        <OfferInterviewPrep
-          companyName={data.company_name}
-          roleTitle={data.role_title}
-          existingContext={buildInterviewPrepContext(data)}
+      {showInterviewPrep && applicationId && initialStatus ? (
+        <ApplicationFollowupCard
+          data={data}
+          offerSource={offerSource}
+          statusPicker={
+            <StatusPicker
+              applicationId={applicationId}
+              initialStatus={initialStatus}
+            />
+          }
         />
+      ) : applicationId && initialStatus ? (
+        <StatusPicker applicationId={applicationId} initialStatus={initialStatus} />
       ) : null}
 
       <ExportActions
@@ -314,13 +317,13 @@ function StatusPicker({
   }
 
   return (
-    <section className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
-      <label htmlFor="app-status" className="label-caps">
-        Stato candidatura
+    <section className="space-y-2">
+      <label htmlFor="app-status" className="text-sm font-semibold text-[var(--ink)]">
+        Stato
       </label>
       <select
         id="app-status"
-        className="field"
+        className="field field-compact"
         value={status}
         disabled={pending}
         onChange={(e) => onChange(e.target.value as ApplicationStatus)}
@@ -331,10 +334,9 @@ function StatusPicker({
           </option>
         ))}
       </select>
-      <p className="text-xs text-[var(--muted)]">
-        Ora: {labelStatus(status)}
-        {pending ? " · salvataggio…" : ""}
-      </p>
+      {pending ? (
+        <p className="text-xs text-[var(--muted)]">Salvataggio…</p>
+      ) : null}
       {error ? (
         <p className="text-sm text-red-700" role="alert">
           {error}

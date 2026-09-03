@@ -19,6 +19,8 @@ export type TabsBootstrap = {
     firstName: string | null;
     profileReady: boolean;
     offers: DiscoveredOffer[];
+    skills: string[];
+    companiesOfInterest: string[];
   };
   archivio: {
     items: ApplicationListItem[];
@@ -75,9 +77,9 @@ export async function loadTabsBootstrap(
         "id, user_id, company_name, role_title, position_type, location, source_url, snippet, match_reason, salary_min, salary_max, salary_source, status, created_at, updated_at",
       )
       .eq("user_id", userId)
-      .eq("status", "new")
+      .in("status", ["new", "watching"])
       .order("created_at", { ascending: false })
-      .limit(12),
+      .limit(40),
     supabase
       .from("applications")
       .select("id, company_name, role_title, position_type, status, created_at")
@@ -88,7 +90,12 @@ export async function loadTabsBootstrap(
 
   const profile = (profileRes.data as Profile | null) ?? null;
   const apps = (appsRes.data ?? []) as ApplicationListItem[];
-  const offers = (offersRes.data ?? []) as DiscoveredOffer[];
+  const offersRaw = (offersRes.data ?? []) as DiscoveredOffer[];
+  const offers = [...offersRaw].sort((a, b) => {
+    if (a.status === "watching" && b.status !== "watching") return -1;
+    if (b.status === "watching" && a.status !== "watching") return 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
   const figmaStatus = await getFigmaConnectionStatus(userId);
 
   const profileReady = Boolean(
@@ -108,6 +115,8 @@ export async function loadTabsBootstrap(
       firstName: profile?.full_name?.trim().split(/\s+/)[0] ?? null,
       profileReady,
       offers,
+      skills: profile?.skills ?? [],
+      companiesOfInterest: profile?.companies_of_interest ?? [],
     },
     archivio: {
       items: apps,

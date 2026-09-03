@@ -50,8 +50,10 @@ export type DiscoveryProfileInput = {
   cv_fallback_text: string | null;
   job_preference: JobPreference;
   companies_of_interest: string[];
-  /** Offerte già in archivio (qualsiasi status): da scartare e sostituire. */
+  /** Offerte già in elenco (qualsiasi status): da non ripetere. */
   seen_offers?: SeenOfferRef[];
+  watchlist?: SeenOfferRef[];
+  dismissed?: SeenOfferRef[];
 };
 
 export type DiscoverOptions = {
@@ -303,6 +305,16 @@ offers può essere [].`,
   }
 }
 
+function discoveryUserPrompt(
+  profile: DiscoveryProfileInput,
+  seen?: SeenOfferRef[],
+): string {
+  return buildDiscoveryUserPrompt(profile, seen ?? profile.seen_offers ?? [], {
+    watchlist: profile.watchlist,
+    dismissed: profile.dismissed,
+  });
+}
+
 /** Una ricerca grounded → JSON, focalizzata su un angolo. */
 async function discoverAngleGrounded(
   ai: GoogleGenAI,
@@ -316,7 +328,7 @@ Focus di questa ricerca: ${angle.focus}.
 Usa la ricerca web. Restituisci SOLO JSON con "offers" (max ${OFFERS_PER_ANGLE}) e "search_notes".
 Scarta qualsiasi offerta già nella lista «già trovate».`;
 
-  const contents = `${buildDiscoveryUserPrompt(profile, seen)}
+  const contents = `${discoveryUserPrompt(profile, seen)}
 
 ANGOLO DI RICERCA: ${angle.label}
 ${angle.focus}
@@ -424,7 +436,7 @@ async function discoverInteractiveMultiSearch(
     const schema = discoveryResultJsonSchema as Record<string, unknown>;
     const result = await generateDiscoveryJson(
       ai,
-      `${buildDiscoveryUserPrompt(profile, profile.seen_offers ?? [])}
+      `${discoveryUserPrompt(profile)}
 
 Nota operativa: la ricerca web (Google Search) non è disponibile per quota/errore.
 Restituisci comunque fino a 6 offerte plausibili e tipiche del mercato italiano/remote IT
@@ -489,7 +501,7 @@ async function discoverFullTwoStep(
   }
 
   const searchNotes = noteParts.length > 0 ? noteParts.join("\n\n---\n\n") : null;
-  const basePrompt = buildDiscoveryUserPrompt(profile, profile.seen_offers ?? []);
+  const basePrompt = discoveryUserPrompt(profile);
   const contents = searchNotes
     ? `${basePrompt}
 

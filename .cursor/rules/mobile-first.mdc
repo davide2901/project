@@ -1,0 +1,14 @@
+---
+description: UI pensata per telefono, non desktop
+alwaysApply: true
+---
+
+# Mobile first
+
+SuMisura è usata soprattutto dal telefono. Ogni schermata deve stare in un viewport stretto senza scroll infinito di chrome.
+
+- Una cosa alla volta: niente griglie di 4 select, card con prefazione + tre sottosezioni, né doppi titoli.
+- Controlli sempre visibili: al massimo una riga (ordinamento o CTA). Il resto dietro «Filtri» / overlay.
+- Testi corti. Niente paragrafi di aiuto sotto ogni bottone.
+- Touch ≥44px e font dei campi ≥16px (niente zoom iOS), ma padding contenuto.
+- Non duplicare label e bottone con lo stesso testo.

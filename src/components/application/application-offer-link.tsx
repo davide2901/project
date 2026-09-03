@@ -4,12 +4,14 @@ type Props = {
   companyName: string;
   roleTitle: string;
   offerSource?: string | null;
+  variant?: "card" | "plain";
 };
 
 export function ApplicationOfferLink({
   companyName,
   roleTitle,
   offerSource,
+  variant = "card",
 }: Props) {
   const link = resolveApplicationOfferLink({
     company_name: companyName,
@@ -17,8 +19,8 @@ export function ApplicationOfferLink({
     offer_source: offerSource ?? null,
   });
 
-  return (
-    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+  const inner = (
+    <>
       <a
         href={link.href}
         target="_blank"
@@ -31,6 +33,16 @@ export function ApplicationOfferLink({
       {link.hint ? (
         <p className="text-xs text-[var(--muted)]">{link.hint}</p>
       ) : null}
+    </>
+  );
+
+  if (variant === "plain") {
+    return <div className="space-y-1">{inner}</div>;
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+      {inner}
     </div>
   );
 }

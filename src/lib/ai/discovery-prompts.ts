@@ -13,15 +13,31 @@ export type SeenOfferRef = {
   role_title: string;
 };
 
-function formatSeenOffers(seen: SeenOfferRef[], limit = 40): string {
-  if (seen.length === 0) return "";
+function formatOfferLines(seen: SeenOfferRef[], limit = 40): string {
   const lines = seen
     .slice(0, limit)
     .map((o) => `- ${o.company_name} — ${o.role_title}`);
   const more =
-    seen.length > limit ? `\n(+ altre ${seen.length - limit} già viste)` : "";
+    seen.length > limit ? `\n(+ altre ${seen.length - limit})` : "";
+  return `${lines.join("\n")}${more}`;
+}
+
+function formatSeenOffers(seen: SeenOfferRef[], limit = 40): string {
+  if (seen.length === 0) return "";
   return `OFFERTE GIÀ TROVATE (scartale: cerca ALTRE aziende e/o ruoli diversi):
-${lines.join("\n")}${more}`;
+${formatOfferLines(seen, limit)}`;
+}
+
+function formatDismissedOffers(dismissed: SeenOfferRef[], limit = 30): string {
+  if (dismissed.length === 0) return "";
+  return `OFFERTE SCARTATE DALL'UTENTE (non riproporle, né varianti minime):
+${formatOfferLines(dismissed, limit)}`;
+}
+
+function formatWatchlist(watchlist: SeenOfferRef[], limit = 20): string {
+  if (watchlist.length === 0) return "";
+  return `LISTA DA TENERE D'OCCHIO (già salvate: non duplicarle. Cerca ruoli/aziende SIMILI o complementari, non le stesse coppie azienda+ruolo):
+${formatOfferLines(watchlist, limit)}`;
 }
 
 export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
@@ -45,21 +61,32 @@ REGOLE:
 8. Classifica position_type correttamente (lavoro | stage | non_chiaro).
 9. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
 10. Se c'è una lista OFFERTA GIÀ TROVATE / GIÀ VISTE: non ripeterle (né varianti minime dello stesso ruolo nella stessa azienda). Preferisci aziende e ruoli nuovi.
-11. Rispondi SOLO con JSON conforme allo schema.`;
+11. Se c'è LISTA DA TENERE D'OCCHIO: sono offerte salvate senza candidatura. Non duplicarle. Puoi usare quelle aziende come segnale di interesse per trovare ALTRE posizioni.
+12. Se c'è OFFERTE SCARTATE: non riproporle.
+13. Rispondi SOLO con JSON conforme allo schema.`;
 }
 
 export function buildDiscoveryUserPrompt(
   profile: DiscoveryProfile,
   seenOffers: SeenOfferRef[] = [],
+  extras: { watchlist?: SeenOfferRef[]; dismissed?: SeenOfferRef[] } = {},
 ): string {
   const skills = profile.skills.length
     ? profile.skills.join(", ")
     : "(nessuna competenza elencata)";
-  const companies = profile.companies_of_interest.length
-    ? profile.companies_of_interest.join(", ")
+  const watchCompanies = [
+    ...profile.companies_of_interest,
+    ...(extras.watchlist ?? []).map((o) => o.company_name),
+  ]
+    .map((c) => c.trim())
+    .filter(Boolean);
+  const companies = watchCompanies.length
+    ? [...new Set(watchCompanies)].join(", ")
     : "(nessuna preferenza azienda)";
   const cvExcerpt = (profile.cv_fallback_text ?? "").trim().slice(0, 2500);
   const seenBlock = formatSeenOffers(seenOffers);
+  const watchBlock = formatWatchlist(extras.watchlist ?? []);
+  const dismissedBlock = formatDismissedOffers(extras.dismissed ?? []);
 
   return `Cerca offerte di lavoro/stage adatte a questo profilo.
 
@@ -69,6 +96,6 @@ Competenze: ${skills}
 Aziende di interesse: ${companies}
 Estratto CV:
 ${cvExcerpt || "(CV non fornito)"}
-${seenBlock ? `\n${seenBlock}\n` : ""}
+${seenBlock ? `\n${seenBlock}\n` : ""}${watchBlock ? `\n${watchBlock}\n` : ""}${dismissedBlock ? `\n${dismissedBlock}\n` : ""}
 Restituisci offers + search_notes.`;
 }
