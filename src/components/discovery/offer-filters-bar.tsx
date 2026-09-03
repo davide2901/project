@@ -34,11 +34,11 @@ export function OfferFiltersBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <label className="min-w-0 flex-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+        <label className="min-w-0">
           <span className="sr-only">Ordina</span>
           <select
-            className="field field-compact"
+            className="field pair-control w-full"
             value={filters.sort}
             onChange={(e) =>
               onChange({ ...filters, sort: e.target.value as OfferSort })
@@ -54,7 +54,7 @@ export function OfferFiltersBar({
         </label>
         <button
           type="button"
-          className={`btn-secondary shrink-0 px-3 text-sm ${extraOn ? "ring-1 ring-[var(--accent)]" : ""}`}
+          className={`btn-secondary pair-control w-full px-2 text-sm ${extraOn ? "ring-1 ring-[var(--accent)]" : ""}`}
           aria-expanded={showExtra}
           onClick={() => setOpen((v) => !v)}
         >
@@ -65,7 +65,7 @@ export function OfferFiltersBar({
       {showExtra ? (
         <div className="grid grid-cols-2 gap-2">
           <select
-            className="field field-compact"
+            className="field pair-control"
             aria-label="Tipo"
             value={filters.type}
             onChange={(e) =>
@@ -78,7 +78,7 @@ export function OfferFiltersBar({
             <option value="non_chiaro">Non chiaro</option>
           </select>
           <select
-            className="field field-compact"
+            className="field pair-control"
             aria-label="Modalità"
             value={filters.workMode}
             onChange={(e) =>
@@ -94,7 +94,7 @@ export function OfferFiltersBar({
             <option value="onsite">In sede</option>
           </select>
           <select
-            className="field field-compact col-span-2"
+            className="field pair-control col-span-2"
             aria-label="Dettaglio"
             value={filters.salary}
             onChange={(e) =>
