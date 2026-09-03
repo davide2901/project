@@ -384,7 +384,9 @@ function ExportActions({
       try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
-        setNote('Nella finestra di stampa scegli «Salva come PDF».');
+        setNote(
+          'Nella finestra di stampa: «Salva come PDF», A4, e togli «intestazioni e piè di pagina».',
+        );
       } catch {
         setNote("Stampa non riuscita. Riprova.");
       } finally {

@@ -1,14 +1,8 @@
-import { readFileSync } from "fs";
-import path from "path";
 import { describe, expect, it } from "vitest";
 import PizZip from "pizzip";
 
 import type { EuropeanCv } from "@/lib/cv/european-cv-schema";
-import {
-  fillDocumentXml,
-  normalizeMatch,
-  stripTrailingTemplatePages,
-} from "@/lib/cv/europass-docx";
+import { generateEuropassDocx, normalizeMatch } from "@/lib/cv/europass-docx";
 
 const sampleCv: EuropeanCv = {
   full_name: "Davide Ulderico D'Aloisio",
@@ -42,60 +36,49 @@ const sampleCv: EuropeanCv = {
   additional: ["Patente B"],
 };
 
-function allTextboxPlain(xml: string): string {
-  const boxes = [...xml.matchAll(/<w:txbxContent>([\s\S]*?)<\/w:txbxContent>/g)];
-  return boxes
-    .map((m) => {
-      const inner = m[1] ?? "";
-      return [...inner.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)]
-        .map((t) => t[1] ?? "")
-        .join("");
-    })
-    .join("\n");
+function docxPlainText(buffer: ArrayBuffer): string {
+  const zip = new PizZip(buffer);
+  const xml = zip.file("word/document.xml")!.asText();
+  return [...xml.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)]
+    .map((m) => m[1] ?? "")
+    .join(" ");
 }
 
-describe("europass-docx fill", () => {
+describe("europass-docx generate", () => {
   it("normalizes curly apostrophes for matching", () => {
     expect(normalizeMatch("Supporto a 360 all\u2019Executive")).toContain(
       "all'executive",
     );
   });
 
-  it("fills template without Nike/Office leftovers or copyright page", () => {
-    const templatePath = path.join(
-      process.cwd(),
-      "public/templates/cv-europass-word.docx",
-    );
-    const buf = readFileSync(templatePath);
-    const zip = new PizZip(buf);
+  it("builds a clean single-section Europass without template junk", async () => {
+    const blob = await generateEuropassDocx(sampleCv);
+    const buffer = await blob.arrayBuffer();
+    const zip = new PizZip(buffer);
     const xml = zip.file("word/document.xml")!.asText();
-
-    const filled = fillDocumentXml(xml, sampleCv);
-    const plain = normalizeMatch(allTextboxPlain(filled));
+    const plain = normalizeMatch(docxPlainText(buffer));
 
     expect(plain).toContain("davide ulderico");
     expect(plain).toContain("pirelli");
     expect(plain).toContain("python");
     expect(plain).toContain("inglese");
     expect(plain).toContain("bari");
+    expect(plain).toContain("presentazione");
 
-    expect(plain).not.toContain("supporto a 360");
-    expect(plain).not.toContain("carrefour");
-    expect(plain).not.toContain("nike");
     expect(plain).not.toContain("maria rossi");
-    expect(plain).not.toMatch(/microsoft word.*social media/);
-    expect(plain).not.toContain("copyright - leggere");
+    expect(plain).not.toContain("nike");
+    expect(plain).not.toContain("carrefour");
     expect(plain).not.toContain("modelli-di-curriculum");
-    // italiano non ripetuto come "altra lingua"
-    expect(plain).not.toMatch(/altre lingue\s*:\s*italiano/);
+    expect(plain).not.toContain("scopri altri");
+    expect(plain).not.toContain("azurius");
+    expect(xml).not.toMatch(/w:type="page"/);
+    expect(xml.toLowerCase()).not.toContain("image1");
   });
 
-  it("stripTrailingTemplatePages removes content after page break", () => {
-    const xml = `<w:document><w:body><w:p><w:r><w:t>CV</w:t></w:r></w:p><w:p><w:r><w:br w:type="page"/></w:r></w:p><w:p><w:r><w:t>COPYRIGHT spam</w:t></w:r></w:p><w:p><w:r><w:drawing>keep</w:drawing></w:r></w:p><w:sectPr><w:pgSz w:w="1"/></w:sectPr></w:body></w:document>`;
-    const stripped = stripTrailingTemplatePages(xml);
-    expect(stripped).toContain("CV");
-    expect(stripped).not.toContain("COPYRIGHT");
-    expect(stripped).toContain("w:drawing");
-    expect(stripped).toContain("w:sectPr");
+  it("does not repeat mother tongue under other languages", async () => {
+    const blob = await generateEuropassDocx(sampleCv);
+    const plain = normalizeMatch(docxPlainText(await blob.arrayBuffer()));
+    expect(plain).toMatch(/lingua madre:\s*italiano/);
+    expect(plain).not.toMatch(/altre lingue:.*italiano/);
   });
 });

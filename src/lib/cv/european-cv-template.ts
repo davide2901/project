@@ -174,52 +174,63 @@ const PRINT_STYLES = `
     padding: 0;
     width: 210mm;
     height: 297mm;
+    max-height: 297mm;
     overflow: hidden;
     font-family: Calibri, "Trebuchet MS", "Helvetica Neue", Arial, sans-serif;
     color: ${TEXT};
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  @media print {
+    html, body {
+      width: 210mm !important;
+      height: 297mm !important;
+      overflow: hidden !important;
+    }
+  }
   .ep-root {
     display: grid;
-    grid-template-columns: 31% 69%;
+    grid-template-columns: 30% 70%;
     width: 210mm;
     height: 297mm;
     max-height: 297mm;
     overflow: hidden;
     page-break-after: avoid;
     page-break-inside: avoid;
+    break-after: avoid;
+    break-inside: avoid;
   }
   .ep-sidebar {
     background: ${EU_BLUE};
     color: #fff;
-    padding: 8mm 6mm 8mm;
+    padding: 6mm 5mm 6mm;
     height: 297mm;
+    overflow: hidden;
   }
-  .ep-brand { margin-bottom: 4mm; }
-  .ep-brand-logo { width: 36mm; max-width: 100%; height: auto; }
+  .ep-brand { margin-bottom: 3mm; }
+  .ep-brand-logo { width: 30mm; max-width: 100%; height: auto; }
   .ep-photo-wrap { display: none; }
   .ep-name {
-    margin: 0 0 3mm;
-    font-size: 15pt;
-    line-height: 1.12;
+    margin: 0 0 2.5mm;
+    font-size: 13pt;
+    line-height: 1.1;
     font-weight: 700;
     letter-spacing: 0.01em;
   }
-  .ep-contacts { margin-bottom: 4mm; font-size: 8pt; line-height: 1.35; }
+  .ep-contacts { margin-bottom: 3mm; font-size: 7.5pt; line-height: 1.3; }
   .ep-contact {
     display: flex;
     align-items: flex-start;
-    gap: 1.5mm;
-    margin: 0 0 1.5mm;
+    gap: 1.2mm;
+    margin: 0 0 1.2mm;
     word-break: break-word;
   }
-  .ep-icon { width: 3mm; height: 3mm; flex-shrink: 0; margin-top: 0.4mm; filter: brightness(0) invert(1); }
-  .ep-icon-phone { flex-shrink: 0; width: 3mm; text-align: center; opacity: 0.95; font-size: 7pt; }
-  .ep-sidebar .ep-section { margin-top: 3.5mm; }
+  .ep-icon { width: 2.8mm; height: 2.8mm; flex-shrink: 0; margin-top: 0.3mm; filter: brightness(0) invert(1); }
+  .ep-icon-phone { flex-shrink: 0; width: 2.8mm; text-align: center; opacity: 0.95; font-size: 6.5pt; }
+  .ep-sidebar .ep-section { margin-top: 2.8mm; }
   .ep-sidebar .ep-section-title {
-    margin: 0 0 1.5mm;
-    font-size: 7pt;
+    margin: 0 0 1.2mm;
+    font-size: 6.5pt;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -227,48 +238,48 @@ const PRINT_STYLES = `
   }
   .ep-side-line {
     margin: 0;
-    font-size: 7pt;
-    line-height: 1.32;
+    font-size: 6.5pt;
+    line-height: 1.28;
     color: rgb(255 255 255 / 0.92);
   }
   .ep-main {
-    padding: 8mm 7mm 8mm 6mm;
+    padding: 6mm 6mm 5mm 5mm;
     background: #fff;
     height: 297mm;
     overflow: hidden;
   }
-  .ep-main .ep-section { margin-bottom: 4mm; }
+  .ep-main .ep-section { margin-bottom: 3mm; }
   .ep-main .ep-section-title {
-    margin: 0 0 2mm;
-    padding-bottom: 0.8mm;
+    margin: 0 0 1.5mm;
+    padding-bottom: 0.6mm;
     border-bottom: 1pt solid ${EU_ACCENT};
-    font-size: 8pt;
+    font-size: 7.5pt;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: ${EU_ACCENT};
   }
-  .ep-body { margin: 0; font-size: 8.5pt; line-height: 1.32; }
-  .ep-entry { margin: 0 0 2.5mm; }
+  .ep-body { margin: 0; font-size: 8pt; line-height: 1.25; }
+  .ep-entry { margin: 0 0 2mm; }
   .ep-entry-title {
-    margin: 0 0 0.5mm;
-    font-size: 8.5pt;
+    margin: 0 0 0.4mm;
+    font-size: 8pt;
     font-weight: 700;
     color: ${TEXT};
   }
   .ep-entry-when {
-    margin: 0 0 1mm;
-    font-size: 7.5pt;
+    margin: 0 0 0.8mm;
+    font-size: 7pt;
     color: #666;
   }
   .ep-entry ul {
     margin: 0;
-    padding-left: 3.5mm;
-    font-size: 8pt;
-    line-height: 1.28;
+    padding-left: 3mm;
+    font-size: 7.5pt;
+    line-height: 1.22;
   }
-  .ep-entry li { margin-bottom: 0.5mm; }
-  .ep-empty { margin: 0; font-size: 8pt; color: #888; }
+  .ep-entry li { margin-bottom: 0.35mm; }
+  .ep-empty { margin: 0; font-size: 7.5pt; color: #888; }
 `;
 
 /** Documento HTML completo per «Salva come PDF». */
