@@ -82,6 +82,15 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      <footer className="relative z-10 mx-auto flex w-full max-w-3xl gap-4 px-5 pb-8 text-xs text-[var(--sand-muted)]">
+        <Link href="/privacy" className="hover:text-[var(--sand)] hover:underline">
+          Privacy
+        </Link>
+        <Link href="/termini" className="hover:text-[var(--sand)] hover:underline">
+          Termini
+        </Link>
+      </footer>
     </div>
   );
 }
