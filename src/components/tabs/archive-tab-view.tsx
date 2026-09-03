@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { SoftDaylightSpot } from "@/components/brand/soft-daylight-spot";
 import { TabLink } from "@/components/layout/tab-link";
 import {
   APPLICATION_STATUS_OPTIONS,
   companyInitials,
-  labelPosition,
   labelStatus,
   normalizeStatus,
 } from "@/lib/application/labels";
@@ -35,14 +33,11 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
   }, [items, filter]);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-[family-name:var(--font-display)] text-[1.85rem] tracking-tight text-[var(--ink)] sm:text-3xl">
+    <div className="space-y-5">
+      <header>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--ink)]">
           Archivio
         </h1>
-        <p className="text-sm text-[var(--muted)]">
-          I tuoi documenti di candidatura, pronti da usare.
-        </p>
       </header>
 
       {error ? (
@@ -55,10 +50,12 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
       ) : null}
 
       {!error && items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-4 py-10 text-center">
-          <SoftDaylightSpot title="Nessuna candidatura ancora. Generane una su misura dalla Home." />
-          <TabLink tab="home" className="mt-6 inline-flex btn-primary">
-            Vai alla Home
+        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-4 py-6 text-center">
+          <p className="text-sm text-[var(--muted)]">
+            Nessuna candidatura. Generala dalla Home.
+          </p>
+          <TabLink tab="home" className="mt-4 inline-flex btn-primary">
+            Home
           </TabLink>
         </div>
       ) : null}
@@ -97,7 +94,7 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
             <li key={item.id}>
               <Link
                 href={`/archivio/${item.id}`}
-                className="flex min-h-[4.5rem] gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3.5 py-3.5 shadow-[var(--shadow)] transition active:bg-[var(--tint)] sm:hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--line))]"
+                className="flex min-h-[3.5rem] gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3 shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
               >
                 <div
                   className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--tint)] font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--ink)]"
@@ -113,9 +110,6 @@ export function ArchiveTabView({ data }: { data: TabsBootstrap["archivio"] }) {
                       </p>
                       <p className="mt-0.5 truncate text-sm text-[var(--ink)]">
                         {item.role_title}
-                      </p>
-                      <p className="mt-1 truncate text-xs text-[var(--muted)]">
-                        {labelPosition(item.position_type)}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
@@ -156,7 +150,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+      className={`inline-flex min-h-10 shrink-0 items-center rounded-full border px-3 text-xs font-semibold transition ${
         active
           ? "border-[var(--btn)] bg-[var(--btn)] text-white"
           : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)]"

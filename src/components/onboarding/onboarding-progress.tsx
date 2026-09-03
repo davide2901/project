@@ -20,6 +20,31 @@ export function OnboardingProgress({ steps, compact = false }: Props) {
 
   if (allDone && compact) return null;
 
+  if (compact) {
+    const next = steps.find((s) => !s.done);
+    return (
+      <section
+        className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3"
+        aria-label="Prossimo passo"
+      >
+        <p className="text-sm text-[var(--muted)]">
+          Prossimo:{" "}
+          <span className="font-semibold text-[var(--ink)]">
+            {next?.label ?? "Tutto pronto"}
+          </span>
+        </p>
+        {!steps[0]?.done ? (
+          <TabLink
+            tab="profilo"
+            className="btn-primary mt-3 inline-flex w-full justify-center"
+          >
+            Completa il CV
+          </TabLink>
+        ) : null}
+      </section>
+    );
+  }
+
   return (
     <section
       className={`rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)] ${

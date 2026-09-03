@@ -44,25 +44,22 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
   });
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-[1.85rem] tracking-tight text-[var(--ink)] sm:text-3xl">
+    <div className="space-y-5">
+      <header className="space-y-1">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--ink)]">
           Il tuo CV
         </h1>
-        <p className="max-w-prose text-sm text-[var(--muted)]">
+        <p className="text-sm text-[var(--muted)]">
           {profileReady ? (
             <>
-              Competenze, testo CV e preferenze. Quando sei pronto, torna in{" "}
+              Poi cerca in{" "}
               <TabLink tab="home" className="text-link">
                 Home
-              </TabLink>{" "}
-              per cercare offerte.
+              </TabLink>
+              .
             </>
           ) : (
-            <>
-              Qui metti il CV e le competenze che possiedi già. È il primo passo
-              per ricevere proposte utili.
-            </>
+            "CV e competenze: primo passo."
           )}
         </p>
       </header>
@@ -76,7 +73,6 @@ export function ProfileTabView({ data }: { data: TabsBootstrap["profilo"] }) {
           profile={data.profile}
           figmaOAuthConfigured={data.figmaOAuthConfigured}
           figmaStatus={data.figmaStatus}
-          showOnboardingHint={!profileReady}
         />
       </Suspense>
     </div>

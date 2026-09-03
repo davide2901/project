@@ -84,9 +84,7 @@ export function FigmaConnectPanel({
       <div className="space-y-1">
         <p className="label-caps">Figma</p>
         <p className="text-sm text-[var(--muted)]">
-          Collega il <strong>tuo</strong> account per importare il CV dal file
-          Figma. L&apos;export dopo la generazione usa il plugin SuMisura +
-          codice sync (l&apos;API Figma non scrive text node).
+          Collega Figma per importare il CV dal file.
         </p>
       </div>
 

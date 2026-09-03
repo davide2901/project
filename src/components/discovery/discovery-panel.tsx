@@ -181,30 +181,27 @@ export function DiscoveryPanel({
     offers.length > 0 && visible.length === 0 && !searching;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col gap-3">
-        <div className="space-y-1">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
-            Offerte per te
+    <section className="space-y-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
+            Offerte
           </h2>
-          <p className="max-w-prose text-sm text-[var(--muted)]">
-            Dettagli, scarta o tieni d&apos;occhio — senza generare.
-          </p>
+          {profileReady ? (
+            <button
+              type="button"
+              className="btn-primary shrink-0 px-3 text-sm"
+              disabled={pending}
+              onClick={onSearch}
+            >
+              {busy?.kind === "search" ? "Cerco…" : "Cerca"}
+            </button>
+          ) : (
+            <TabLink tab="profilo" className="btn-secondary shrink-0 px-3 text-sm">
+              CV
+            </TabLink>
+          )}
         </div>
-        {profileReady ? (
-          <button
-            type="button"
-            className="btn-primary btn-stack-mobile"
-            disabled={pending}
-            onClick={onSearch}
-          >
-            {busy?.kind === "search" ? "Ricerca in corso…" : "Cerca offerte"}
-          </button>
-        ) : (
-          <TabLink tab="profilo" className="btn-secondary btn-stack-mobile">
-            Completa il CV
-          </TabLink>
-        )}
       </div>
 
       {error ? (

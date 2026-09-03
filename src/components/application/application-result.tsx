@@ -140,18 +140,17 @@ export function ApplicationResult({
       : [...docs, ...analysis].find((d) => d.key === openDoc) ?? null;
 
   return (
-    <div className="space-y-6 animate-fade-up">
-      <header className="space-y-2">
-        <p className="label-caps">Candidatura</p>
-        <h2 className="font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
+    <div className="space-y-4 animate-fade-up">
+      <header className="space-y-0.5">
+        <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
           {data.company_name}
         </h2>
-        <p className="text-base text-[var(--ink)]">{data.role_title}</p>
-        <p className="text-sm text-[var(--muted)]">
+        <p className="text-sm text-[var(--ink)]">{data.role_title}</p>
+        <p className="text-xs text-[var(--muted)]">
           {labelPosition(data.position_type)}
         </p>
         {cvSourceLabel ? (
-          <p className="pt-1 text-xs text-[var(--muted)]">{cvSourceLabel}</p>
+          <p className="text-xs text-[var(--muted)]">{cvSourceLabel}</p>
         ) : null}
       </header>
 
@@ -177,13 +176,8 @@ export function ApplicationResult({
         figmaSyncCode={figmaSyncCode ?? null}
       />
 
-      <section className="space-y-3">
-        <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-          Documenti
-        </h3>
-        <p className="text-sm text-[var(--muted)]">
-          Tocca una voce per aprirla a schermo intero.
-        </p>
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-[var(--ink)]">Documenti</h3>
         <ul className="space-y-2">
           {docs.map((doc) => (
             <li key={doc.key}>
@@ -197,10 +191,8 @@ export function ApplicationResult({
         </ul>
       </section>
 
-      <section className="space-y-3">
-        <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-          Analisi
-        </h3>
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-[var(--ink)]">Analisi</h3>
         <ul className="space-y-2">
           {analysis.map((doc) => (
             <li key={doc.key}>
@@ -279,7 +271,7 @@ function DocRow({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3.5 text-left shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
+      className="flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3 text-left shadow-[var(--shadow)] transition active:bg-[var(--tint)]"
     >
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-[var(--ink)]">{title}</p>
@@ -461,21 +453,15 @@ function ExportActions({
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-4 shadow-[var(--shadow)]">
-      <h3 className="font-[family-name:var(--font-display)] text-lg text-[var(--ink)]">
-        Esporta CV
-      </h3>
-      <p className="text-sm text-[var(--muted)]">
-        Esporta con il template Europass. Nel dialogo di stampa PDF disattiva
-        «Intestazioni e piè di pagina» per un layout pulito.
-      </p>
+    <section className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-3 py-3 shadow-[var(--shadow)]">
+      <h3 className="text-sm font-semibold text-[var(--ink)]">Esporta CV</h3>
       <button
         type="button"
         className="btn-primary w-full"
         onClick={printPdf}
         disabled={busy != null}
       >
-        {busy === "pdf" ? "Preparazione PDF…" : "Scarica CV in PDF"}
+        {busy === "pdf" ? "Preparazione…" : "Scarica PDF"}
       </button>
       <button
         type="button"
@@ -483,7 +469,7 @@ function ExportActions({
         onClick={downloadDocx}
         disabled={busy != null}
       >
-        {busy === "docx" ? "Preparazione Word…" : "Scarica CV in Word (.docx)"}
+        {busy === "docx" ? "Preparazione…" : "Scarica Word"}
       </button>
       <button
         type="button"
@@ -491,7 +477,7 @@ function ExportActions({
         onClick={() => setAdvancedOpen((v) => !v)}
         aria-expanded={advancedOpen}
       >
-        {advancedOpen ? "Nascondi opzioni avanzate" : "Opzioni avanzate · Figma"}
+        {advancedOpen ? "Nascondi Figma" : "Figma"}
       </button>
       {advancedOpen ? (
         <div className="space-y-2 border-t border-[var(--line)] pt-3">

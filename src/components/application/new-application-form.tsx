@@ -77,7 +77,7 @@ export function NewApplicationForm({ mockMode = false }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {mockMode ? (
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
@@ -109,14 +109,12 @@ export function NewApplicationForm({ mockMode = false }: Props) {
           <textarea
             id="offer"
             name="offer"
-            rows={12}
+            rows={8}
             value={offer}
             onChange={(e) => setOffer(e.target.value)}
             required
             className="field resize-y"
-            placeholder={
-              "Incolla qui l'annuncio (testo completo) oppure un URL...\n\nVerranno estratti: azienda, ruolo, keyword ATS.\nPoi ricerca web sull'azienda e generazione CV / lettera / email."
-            }
+            placeholder="Incolla l'annuncio o un URL…"
           />
         </div>
 

@@ -44,7 +44,7 @@ export default async function AccountPage() {
   );
 
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div className="space-y-5 animate-fade-up">
       <div>
         <Link
           href="/home"
@@ -54,17 +54,10 @@ export default async function AccountPage() {
         </Link>
       </div>
 
-      <header className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-[1.85rem] tracking-tight text-[var(--ink)] sm:text-3xl">
+      <header>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--ink)]">
           Account
         </h1>
-        <p className="max-w-prose text-sm leading-relaxed text-[var(--muted)]">
-          Accesso e sessione. Per CV e competenze usa la scheda{" "}
-          <Link href="/profilo" className="text-link">
-            CV
-          </Link>{" "}
-          nel menu in basso.
-        </p>
       </header>
 
       <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)]">
@@ -95,9 +88,7 @@ export default async function AccountPage() {
             <p className="font-semibold text-[var(--ink)]">
               {profileReady ? "Apri la scheda CV" : "Completa la scheda CV"}
             </p>
-            <p className="mt-0.5 text-sm text-[var(--muted)]">
-              Competenze, testo CV, preferenze lavoro/stage
-            </p>
+            <p className="mt-0.5 text-sm text-[var(--muted)]">Competenze e testo CV</p>
           </div>
           <span aria-hidden className="text-[var(--muted)]">
             ›
@@ -105,12 +96,8 @@ export default async function AccountPage() {
         </Link>
       </section>
 
-      <section className="space-y-3 border-t border-[var(--line)] pt-6">
+      <section className="space-y-2 border-t border-[var(--line)] pt-4">
         <h2 className="text-sm font-semibold text-[var(--ink)]">Sessione</h2>
-        <p className="text-sm text-[var(--muted)]">
-          Esci da questo dispositivo. Potrai accedere di nuovo con la stessa
-          email.
-        </p>
         <SignOutButton />
       </section>
     </div>

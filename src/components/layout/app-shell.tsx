@@ -31,7 +31,7 @@ export function AppShell({ children, email, bootstrap }: AppShellProps) {
             <HeaderMenu email={email} />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-8 pt-2">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-5 pt-2">
           <TabOutlet>{children}</TabOutlet>
         </main>
         <BottomNav />

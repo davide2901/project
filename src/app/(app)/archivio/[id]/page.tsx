@@ -58,7 +58,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
     .maybeSingle();
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-4 animate-fade-up">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/archivio"

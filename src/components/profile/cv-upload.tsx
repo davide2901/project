@@ -37,8 +37,7 @@ export function CvUpload({ onExtracted, hasExistingCv = false }: CvUploadProps) 
         </summary>
         <div className="mt-3 space-y-3 border-t border-[var(--line)] pt-3">
           <p className="text-sm text-[var(--muted)]">
-            Hai già un CV salvato. Carica un nuovo file solo se vuoi
-            sostituirlo: rivedi i campi e premi Salva.
+            File nuovo: rivedi i campi e Salva.
           </p>
           <UploadForm
             action={action}
@@ -52,12 +51,11 @@ export function CvUpload({ onExtracted, hasExistingCv = false }: CvUploadProps) 
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow)]">
+    <section className="space-y-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 shadow-[var(--shadow)]">
       <div className="space-y-1">
         <p className="label-caps">Carica CV</p>
         <p className="text-sm text-[var(--muted)]">
-          PDF, DOCX o foto: lo analizziamo e precompiliamo i campi sotto.
-          Controlla sempre e premi Salva.
+          PDF, DOCX o foto. Poi controlla e Salva.
         </p>
       </div>
       <UploadForm

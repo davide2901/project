@@ -28,7 +28,6 @@ type ProfileFormProps = {
   profile: Profile;
   figmaOAuthConfigured: boolean;
   figmaStatus: FigmaConnectionStatus;
-  showOnboardingHint?: boolean;
 };
 
 type FormValues = {
@@ -83,7 +82,6 @@ export function ProfileForm({
   profile,
   figmaOAuthConfigured,
   figmaStatus,
-  showOnboardingHint = false,
 }: ProfileFormProps) {
   const [state, action, pending] = useActionState(updateProfile, initial);
   const [values, setValues] = useState<FormValues>(() => fromProfile(profile));
@@ -138,23 +136,13 @@ export function ProfileForm({
   }
 
   return (
-    <div className="space-y-8">
-      {showOnboardingHint ? (
-        <div className="rounded-2xl border border-[var(--line)] bg-[var(--tint)] px-4 py-4 text-sm leading-relaxed text-[var(--ink)]">
-          <p className="font-semibold">Primo passo</p>
-          <p className="mt-1 text-[var(--muted)]">
-            Carica o incolla il CV e aggiungi le competenze che possiedi già.
-            Poi salva e torna in Home per cercare offerte.
-          </p>
-        </div>
-      ) : null}
-
+    <div className="space-y-5">
       <CvUpload
         onExtracted={onExtracted}
         hasExistingCv={Boolean(values.cv_fallback_text.trim())}
       />
 
-      <form action={action} className="space-y-8">
+      <form action={action} className="space-y-5">
         <input type="hidden" name="skills" value={values.skills} />
         {!cvEditing ? (
           <input
@@ -206,11 +194,8 @@ export function ProfileForm({
           </fieldset>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-2">
           <p className="label-caps">Competenze</p>
-          <p className="text-xs text-[var(--muted)]">
-            Solo competenze che possiedi già. Tocca × per rimuovere.
-          </p>
           {skillChips.length > 0 ? (
             <ul className="flex flex-wrap gap-2">
               {skillChips.map((skill) => (
@@ -246,7 +231,7 @@ export function ProfileForm({
                 }
               }}
               className="field flex-1"
-              placeholder="Scrivi una competenza e premi Aggiungi"
+              placeholder="Aggiungi competenza"
               aria-label="Aggiungi competenza"
             />
             <button
@@ -260,17 +245,13 @@ export function ProfileForm({
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-2">
           <p className="label-caps">CV</p>
-          <p className="text-xs text-[var(--muted)]">
-            Caricalo sopra oppure incollalo qui. Serve per adattare il CV
-            europeo alle offerte.
-          </p>
           {cvEditing || !hasCv ? (
             <textarea
               id="cv_fallback_text"
               name="cv_fallback_text"
-              rows={10}
+              rows={6}
               value={values.cv_fallback_text}
               onChange={(e) =>
                 setValues((v) => ({ ...v, cv_fallback_text: e.target.value }))
@@ -313,7 +294,7 @@ export function ProfileForm({
           <textarea
             id="companies_of_interest"
             name="companies_of_interest"
-            rows={3}
+            rows={2}
             value={values.companies_of_interest}
             onChange={(e) =>
               setValues((v) => ({
@@ -337,10 +318,7 @@ export function ProfileForm({
           >
             <span>
               <span className="block text-sm font-semibold text-[var(--ink)]">
-                Avanzate · Figma
-              </span>
-              <span className="mt-0.5 block text-xs text-[var(--muted)]">
-                Opzionale: collega i tuoi file per copiare il CV
+                Figma (opzionale)
               </span>
             </span>
             <span aria-hidden className="text-[var(--muted)]">
