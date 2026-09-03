@@ -61,15 +61,15 @@ function p(
 ): Paragraph {
   return new Paragraph({
     spacing: {
-      after: opts.spacingAfter ?? 60,
+      after: opts.spacingAfter ?? 80,
       before: opts.spacingBefore ?? 0,
-      line: 240,
+      line: 276,
     },
     children: [
       new TextRun({
         text,
         bold: opts.bold,
-        size: opts.size ?? 16,
+        size: opts.size ?? 20,
         color: opts.color ?? TEXT,
         font: "Calibri",
         allCaps: opts.allCaps,
@@ -81,29 +81,29 @@ function p(
 function sideHeading(title: string): Paragraph {
   return p(title, {
     bold: true,
-    size: 14,
+    size: 17,
     color: "FFFFFF",
-    spacingBefore: 140,
-    spacingAfter: 60,
+    spacingBefore: 180,
+    spacingAfter: 80,
     allCaps: true,
   });
 }
 
 function sideLine(text: string): Paragraph {
-  return p(text, { size: 13, color: "E8ECF5", spacingAfter: 40 });
+  return p(text, { size: 17, color: "E8ECF5", spacingAfter: 60 });
 }
 
 function mainHeading(title: string): Paragraph {
   return new Paragraph({
-    spacing: { after: 80, before: 40, line: 240 },
+    spacing: { after: 100, before: 60, line: 276 },
     border: {
-      bottom: { style: BorderStyle.SINGLE, size: 8, color: EU_ACCENT, space: 4 },
+      bottom: { style: BorderStyle.SINGLE, size: 10, color: EU_ACCENT, space: 4 },
     },
     children: [
       new TextRun({
         text: title.toUpperCase(),
         bold: true,
-        size: 15,
+        size: 18,
         color: EU_ACCENT,
         font: "Calibri",
       }),
@@ -119,18 +119,18 @@ function buildSidebar(cv: EuropeanCv): Paragraph[] {
   out.push(
     p("EUROPASS", {
       bold: true,
-      size: 14,
+      size: 18,
       color: "FFFFFF",
-      spacingAfter: 120,
+      spacingAfter: 160,
       allCaps: true,
     }),
   );
   out.push(
     p(cv.full_name.trim(), {
       bold: true,
-      size: 22,
+      size: 28,
       color: "FFFFFF",
-      spacingAfter: 120,
+      spacingAfter: 160,
     }),
   );
 
@@ -162,7 +162,7 @@ function buildMain(cv: EuropeanCv): Paragraph[] {
 
   if (cv.summary?.trim()) {
     out.push(mainHeading("Presentazione"));
-    out.push(p(cv.summary.trim(), { size: 16, spacingAfter: 100 }));
+    out.push(p(cv.summary.trim(), { size: 20, spacingAfter: 140 }));
   }
 
   if (cv.education.length) {
@@ -172,8 +172,8 @@ function buildMain(cv: EuropeanCv): Paragraph[] {
         .filter(Boolean)
         .join(" – ");
       const when = [entry.period, entry.location].filter(Boolean).join(" – ");
-      if (title) out.push(p(title, { bold: true, size: 16, spacingAfter: 20 }));
-      if (when) out.push(p(when, { size: 14, color: MUTED, spacingAfter: 80 }));
+      if (title) out.push(p(title, { bold: true, size: 20, spacingAfter: 40 }));
+      if (when) out.push(p(when, { size: 17, color: MUTED, spacingAfter: 100 }));
     }
   }
 
@@ -182,17 +182,17 @@ function buildMain(cv: EuropeanCv): Paragraph[] {
     for (const entry of cv.work_experience) {
       const title = [entry.role, entry.employer].filter(Boolean).join(" – ");
       const when = [entry.period, entry.location].filter(Boolean).join(" – ");
-      if (title) out.push(p(title, { bold: true, size: 16, spacingAfter: 20 }));
-      if (when) out.push(p(when, { size: 14, color: MUTED, spacingAfter: 40 }));
+      if (title) out.push(p(title, { bold: true, size: 20, spacingAfter: 40 }));
+      if (when) out.push(p(when, { size: 17, color: MUTED, spacingAfter: 60 }));
       for (const h of entry.highlights) {
         out.push(
           new Paragraph({
-            spacing: { after: 30, line: 230 },
-            indent: { left: convertMillimetersToTwip(2) },
+            spacing: { after: 50, line: 260 },
+            indent: { left: convertMillimetersToTwip(2.5) },
             children: [
               new TextRun({
                 text: `• ${h}`,
-                size: 15,
+                size: 19,
                 color: TEXT,
                 font: "Calibri",
               }),
@@ -200,7 +200,7 @@ function buildMain(cv: EuropeanCv): Paragraph[] {
           }),
         );
       }
-      out.push(p("", { spacingAfter: 60 }));
+      out.push(p("", { spacingAfter: 80 }));
     }
   }
 
