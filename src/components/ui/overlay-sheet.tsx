@@ -9,9 +9,18 @@ type Props = {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Stacking for nested sheets (default 80). */
+  zIndex?: number;
 };
 
-export function OverlaySheet({ open, title, onClose, children, footer }: Props) {
+export function OverlaySheet({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+  zIndex = 80,
+}: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -26,7 +35,10 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -38,7 +50,10 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
   if (!open || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
+    <div
+      className="fixed inset-0 flex items-end justify-center sm:items-center sm:p-4"
+      style={{ zIndex }}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-[rgb(7_15_26_/_0.55)]"
@@ -49,8 +64,9 @@ export function OverlaySheet({ open, title, onClose, children, footer }: Props) 
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-[81] flex max-h-[88dvh] w-full flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] sm:max-w-lg sm:rounded-2xl"
+        className="relative flex max-h-[88dvh] w-full flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] sm:max-w-lg sm:rounded-2xl"
         style={{
+          zIndex: zIndex + 1,
           paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
         }}
       >

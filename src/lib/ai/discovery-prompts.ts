@@ -37,14 +37,15 @@ export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
 REGOLE:
 1. Se sotto trovi NOTE DALLA RICERCA WEB, usale come fonte primaria: non inventare offerte assenti da quelle note.
 2. source_url: includi l'URL dell'annuncio o della pagina careers se lo trovi nella ricerca; NON inventare URL. Se non c'è un link verificabile, null.
-3. Non inventare competenze del candidato: match_reason deve basarsi solo su skills/CV forniti.
-4. Massimo 12 offerte, preferibilmente 6–10 di buona qualità.
-5. ${preferenceHint}
-6. Se companies_of_interest è valorizzato, privilegia offerte di quelle aziende o simili — ma se quelle aziende sono già nella lista «già trovate», cerca altrove.
-7. Classifica position_type correttamente (lavoro | stage | non_chiaro).
-8. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
-9. Se c'è una lista OFFERTA GIÀ TROVATE / GIÀ VISTE: non ripeterle (né varianti minime dello stesso ruolo nella stessa azienda). Preferisci aziende e ruoli nuovi.
-10. Rispondi SOLO con JSON conforme allo schema.`;
+3. RAL (salary_min/salary_max in euro interi, RAL annua lorda): se la cifra è NELL'ANNUNCIO → salary_source="annuncio". Se non c'è ma trovi range su Glassdoor/Levels.fyi/mercato → salary_source="stima" (sono indicative, non certe). Se non trovi nulla → salary_min=null, salary_max=null, salary_source=null. Non inventare cifre.
+4. Non inventare competenze del candidato: match_reason deve basarsi solo su skills/CV forniti.
+5. Massimo 12 offerte, preferibilmente 6–10 di buona qualità.
+6. ${preferenceHint}
+7. Se companies_of_interest è valorizzato, privilegia offerte di quelle aziende o simili — ma se quelle aziende sono già nella lista «già trovate», cerca altrove.
+8. Classifica position_type correttamente (lavoro | stage | non_chiaro).
+9. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
+10. Se c'è una lista OFFERTA GIÀ TROVATE / GIÀ VISTE: non ripeterle (né varianti minime dello stesso ruolo nella stessa azienda). Preferisci aziende e ruoli nuovi.
+11. Rispondi SOLO con JSON conforme allo schema.`;
 }
 
 export function buildDiscoveryUserPrompt(

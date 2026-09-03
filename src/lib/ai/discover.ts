@@ -28,6 +28,7 @@ import {
   enrichOffersWithUrls,
   type GroundingWebRef,
 } from "@/lib/discovery/offer-links";
+import { normalizeSalaryFields } from "@/lib/discovery/salary";
 import type { JobPreference } from "@/lib/types/database";
 
 export type DiscoveryOutcome = DiscoveryResult & {
@@ -114,6 +115,13 @@ function tryParseJsonObject(text: string): unknown {
   }
 }
 
+function normalizeOfferItem(
+  item: DiscoveryResult["offers"][number],
+): DiscoveryResult["offers"][number] {
+  const salary = normalizeSalaryFields(item);
+  return { ...item, ...salary };
+}
+
 function parseDiscovery(text: string): DiscoveryResult {
   const trimmed = text.trim();
   if (!trimmed) {
@@ -142,7 +150,7 @@ function parseDiscovery(text: string): DiscoveryResult {
         .map((item) => discoveredOfferItemSchemaSafe(item))
         .filter(Boolean) as DiscoveryResult["offers"];
       return {
-        offers,
+        offers: offers.map(normalizeOfferItem),
         search_notes: Array.isArray(raw.search_notes)
           ? (raw.search_notes as string[]).map(String)
           : ["Alcune offerte non erano valide ed sono state scartate."],
@@ -159,7 +167,10 @@ function parseDiscovery(text: string): DiscoveryResult {
     };
   }
 
-  return parsed.data;
+  return {
+    ...parsed.data,
+    offers: parsed.data.offers.map(normalizeOfferItem),
+  };
 }
 
 function discoveredOfferItemSchemaSafe(
@@ -216,7 +227,7 @@ async function collectSearchNotesForAngle(
       contents: `Cerca offerte di lavoro reali sul web.
 Focus ricerca: ${angle.focus}.
 
-Elenca fino a ${OFFERS_PER_ANGLE} offerte con: azienda, ruolo, luogo, tipo (lavoro/stage), URL se disponibile, breve descrizione, perché matcha il profilo (${profile.skills.slice(0, 8).join(", ") || "vedi CV"}).
+Elenca fino a ${OFFERS_PER_ANGLE} offerte con: azienda, ruolo, luogo, tipo (lavoro/stage), URL se disponibile, RAL se disponibile (annuncio o stima Glassdoor), breve descrizione, perché matcha il profilo (${profile.skills.slice(0, 8).join(", ") || "vedi CV"}).
 Solo offerte reali; se non trovi nulla, dillo chiaramente.`,
       config: {
         temperature: 0.35,
@@ -311,8 +322,9 @@ ANGOLO DI RICERCA: ${angle.label}
 ${angle.focus}
 
 Dopo la ricerca, restituisci SOLO JSON:
-{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":"https://...","snippet":"...","match_reason":"..."}],"search_notes":["..."]}
+{"offers":[{"company_name":"...","role_title":"...","position_type":"lavoro|stage|non_chiaro","location":"...","source_url":"https://...","snippet":"...","match_reason":"...","salary_min":38000,"salary_max":45000,"salary_source":"annuncio|stima|null"}],"search_notes":["..."]}
 source_url = URL dell'annuncio o pagina careers se trovato nella ricerca; altrimenti null.
+salary_* = RAL annua in euro se trovata (annuncio o stima Glassdoor/mercato); altrimenti null.
 Massimo ${OFFERS_PER_ANGLE} offerte NUOVE per questo angolo.`;
 
   const t0 = Date.now();

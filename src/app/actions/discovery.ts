@@ -183,6 +183,9 @@ export async function runDiscovery(): Promise<RunDiscoveryResult> {
         source_url: offer.source_url,
         snippet: offer.snippet,
         match_reason: offer.match_reason,
+        salary_min: offer.salary_min,
+        salary_max: offer.salary_max,
+        salary_source: offer.salary_source,
         status: "new",
       });
 
@@ -258,10 +261,15 @@ export async function startApplicationFromOffer(
 
   const row = offer as DiscoveredOffer;
   const link = resolveOfferLink(row);
+  const salary =
+    row.salary_min != null && row.salary_max != null
+      ? `RAL: ${row.salary_min}–${row.salary_max} € (${row.salary_source === "annuncio" ? "da annuncio" : "stima non certa"})`
+      : null;
   const offerText = [
     `${row.company_name} — ${row.role_title}`,
     row.location ? `Luogo: ${row.location}` : null,
     `Tipo: ${row.position_type}`,
+    salary,
     row.snippet,
     link.kind === "direct"
       ? `Link: ${link.href}`
@@ -345,6 +353,9 @@ export async function runDiscoveryForUserId(
         source_url: offer.source_url,
         snippet: offer.snippet,
         match_reason: offer.match_reason,
+        salary_min: offer.salary_min,
+        salary_max: offer.salary_max,
+        salary_source: offer.salary_source,
         status: "new",
       });
 

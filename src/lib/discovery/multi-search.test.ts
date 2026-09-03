@@ -20,6 +20,9 @@ function offer(
     source_url: url,
     snippet: "x",
     match_reason: "y",
+    salary_min: null,
+    salary_max: null,
+    salary_source: null,
   };
 }
 

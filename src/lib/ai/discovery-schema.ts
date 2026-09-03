@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const salarySourceSchema = z.enum(["annuncio", "stima"]);
+
 export const discoveredOfferItemSchema = z.object({
   company_name: z.string(),
   role_title: z.string(),
@@ -13,6 +15,26 @@ export const discoveredOfferItemSchema = z.object({
   match_reason: z
     .string()
     .describe("Perché questa offerta è adatta al profilo del candidato"),
+  salary_min: z
+    .preprocess(
+      (v) => (v === undefined ? null : v),
+      z.number().int().nullable(),
+    )
+    .describe("RAL annua lorda minima in euro, o null"),
+  salary_max: z
+    .preprocess(
+      (v) => (v === undefined ? null : v),
+      z.number().int().nullable(),
+    )
+    .describe("RAL annua lorda massima in euro, o null"),
+  salary_source: z
+    .preprocess(
+      (v) => (v === undefined ? null : v),
+      salarySourceSchema.nullable(),
+    )
+    .describe(
+      "annuncio se nell'inserzione; stima se Glassdoor/mercato; null se sconosciuta",
+    ),
 });
 
 export const discoveryResultSchema = z.object({
@@ -27,6 +49,7 @@ export const discoveryResultSchema = z.object({
 
 export type DiscoveredOfferItem = z.infer<typeof discoveredOfferItemSchema>;
 export type DiscoveryResult = z.infer<typeof discoveryResultSchema>;
+export type SalarySource = z.infer<typeof salarySourceSchema>;
 
 export const discoveryResultJsonSchema = {
   type: "object",
@@ -47,6 +70,9 @@ export const discoveryResultJsonSchema = {
           "source_url",
           "snippet",
           "match_reason",
+          "salary_min",
+          "salary_max",
+          "salary_source",
         ],
         properties: {
           company_name: { type: "string" },
@@ -59,6 +85,12 @@ export const discoveryResultJsonSchema = {
           source_url: { type: ["string", "null"] },
           snippet: { type: "string" },
           match_reason: { type: "string" },
+          salary_min: { type: ["integer", "null"] },
+          salary_max: { type: ["integer", "null"] },
+          salary_source: {
+            type: ["string", "null"],
+            enum: ["annuncio", "stima", null],
+          },
         },
       },
     },

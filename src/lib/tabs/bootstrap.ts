@@ -72,7 +72,7 @@ export async function loadTabsBootstrap(
     supabase
       .from("discovered_offers")
       .select(
-        "id, user_id, company_name, role_title, position_type, location, source_url, snippet, match_reason, status, created_at, updated_at",
+        "id, user_id, company_name, role_title, position_type, location, source_url, snippet, match_reason, salary_min, salary_max, salary_source, status, created_at, updated_at",
       )
       .eq("user_id", userId)
       .eq("status", "new")

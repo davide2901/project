@@ -111,9 +111,13 @@ bf7a529 Widen offer discovery with parallel web search angles.
 ## Prossimi passi suggeriti (non implementati)
 
 - Ridurre chiamate Search parallele quando quota esaurita
-- Colonna `source_url` su `applications` (oggi link in `offer_source` testo)
-- Integrazione LinkedIn OAuth / review profilo (fase 2)
+- LinkedIn OAuth / review profilo (fase 2)
 - Backfill URL per offerte esistenti con nuova ricerca
+
+## Completato di recente
+- Link inserzione / Cerca online
+- RAL su offerte (annuncio vs stima)
+- Intel azienda on-demand + sheet Prepara il colloquio
 
 ---
 

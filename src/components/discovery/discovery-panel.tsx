@@ -9,6 +9,8 @@ import {
 } from "@/app/actions/discovery";
 import type { RunDiscoveryResult } from "@/app/actions/discovery";
 import { OfferExternalLink } from "@/components/discovery/offer-external-link";
+import { OfferInterviewPrep } from "@/components/discovery/offer-interview-prep";
+import { OfferSalaryLine } from "@/components/discovery/offer-salary-line";
 import { OverlaySheet } from "@/components/ui/overlay-sheet";
 import { TabLink } from "@/components/layout/tab-link";
 import { labelPosition } from "@/lib/application/labels";
@@ -203,6 +205,7 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                 <p className="text-xs text-[var(--muted)]">
                   {labelPosition(offer.position_type)}
                   {offer.location ? ` · ${offer.location}` : ""}
+                  <OfferSalaryLine offer={offer} variant="card" />
                 </p>
               </div>
               <OfferExternalLink
@@ -268,6 +271,13 @@ export function DiscoveryPanel({ offers, profileReady }: Props) {
                 {openOffer.match_reason}
               </p>
             ) : null}
+            <OfferSalaryLine offer={openOffer} variant="detail" />
+            <OfferInterviewPrep
+              companyName={openOffer.company_name}
+              roleTitle={openOffer.role_title}
+              location={openOffer.location}
+              offerId={openOffer.id}
+            />
             <OfferExternalLink offer={openOffer} variant="detail" />
           </div>
         ) : null}

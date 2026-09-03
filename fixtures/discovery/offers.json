@@ -6,7 +6,10 @@
     "location": "Milano, Italia (hybrid)",
     "source_url": "https://bendingspoons.com/careers",
     "snippet": "Cerchiamo esperienza in React / TypeScript, performance e Next.js.",
-    "match_reason": "Allineata alle competenze frontend dichiarate nel profilo."
+    "match_reason": "Allineata alle competenze frontend dichiarate nel profilo.",
+    "salary_min": 42000,
+    "salary_max": 55000,
+    "salary_source": "stima"
   },
   {
     "company_name": "Satispay",
@@ -15,7 +18,10 @@
     "location": "Milano, Italia",
     "source_url": "https://www.satispay.com/careers",
     "snippet": "Stage retribuito su React, Node.js, TypeScript e API REST.",
-    "match_reason": "Stage full-stack coerente con preferenza e stack del candidato."
+    "match_reason": "Stage full-stack coerente con preferenza e stack del candidato.",
+    "salary_min": 8000,
+    "salary_max": 12000,
+    "salary_source": "annuncio"
   },
   {
     "company_name": "N26",
@@ -24,6 +30,9 @@
     "location": "Berlin, Germany",
     "source_url": "https://n26.com/en-eu/careers",
     "snippet": "Figma, React, TypeScript e design systems. English required.",
-    "match_reason": "Mix design/frontend vicino al profilo e alle keyword del CV."
+    "match_reason": "Mix design/frontend vicino al profilo e alle keyword del CV.",
+    "salary_min": null,
+    "salary_max": null,
+    "salary_source": null
   }
 ]

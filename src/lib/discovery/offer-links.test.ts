@@ -56,6 +56,9 @@ describe("enrichOffersWithUrls", () => {
           source_url: null,
           snippet: "Ruolo interessante",
           match_reason: "Match skills",
+          salary_min: null,
+          salary_max: null,
+          salary_source: null,
         },
       ],
       {

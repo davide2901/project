@@ -99,6 +99,8 @@ export type ApplicationListItem = Pick<
 
 export type DiscoveredOfferStatus = "new" | "dismissed" | "applied";
 
+export type SalarySource = "annuncio" | "stima";
+
 export type DiscoveredOffer = {
   id: string;
   user_id: string;
@@ -109,7 +111,26 @@ export type DiscoveredOffer = {
   source_url: string | null;
   snippet: string;
   match_reason: string;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_source: SalarySource | null;
   status: DiscoveredOfferStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyIntelConfidence = "alta" | "media" | "bassa";
+
+export type CompanyIntelRow = {
+  id: string;
+  company_key: string;
+  company_name: string;
+  role_key: string;
+  role_title: string | null;
+  payload: import("@/lib/ai/company-intel-schema").CompanyIntelPayload;
+  confidence: CompanyIntelConfidence;
+  fetched_at: string;
+  expires_at: string;
   created_at: string;
   updated_at: string;
 };
@@ -228,6 +249,9 @@ export type Database = {
           source_url?: string | null;
           snippet?: string;
           match_reason?: string;
+          salary_min?: number | null;
+          salary_max?: number | null;
+          salary_source?: SalarySource | null;
           status?: DiscoveredOfferStatus;
           created_at?: string;
           updated_at?: string;
@@ -242,6 +266,9 @@ export type Database = {
           source_url?: string | null;
           snippet?: string;
           match_reason?: string;
+          salary_min?: number | null;
+          salary_max?: number | null;
+          salary_source?: SalarySource | null;
           status?: DiscoveredOfferStatus;
           created_at?: string;
           updated_at?: string;
@@ -255,6 +282,36 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      company_intel: {
+        Row: CompanyIntelRow;
+        Insert: {
+          id?: string;
+          company_key: string;
+          company_name: string;
+          role_key?: string;
+          role_title?: string | null;
+          payload?: CompanyIntelRow["payload"];
+          confidence?: CompanyIntelConfidence;
+          fetched_at?: string;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_key?: string;
+          company_name?: string;
+          role_key?: string;
+          role_title?: string | null;
+          payload?: CompanyIntelRow["payload"];
+          confidence?: CompanyIntelConfidence;
+          fetched_at?: string;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       figma_connections: {
         Row: {
