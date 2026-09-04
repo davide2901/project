@@ -21,6 +21,7 @@ export type TabsBootstrap = {
     offers: DiscoveredOffer[];
     skills: string[];
     companiesOfInterest: string[];
+    preferredLocations: string[];
   };
   archivio: {
     items: ApplicationListItem[];
@@ -117,6 +118,7 @@ export async function loadTabsBootstrap(
       offers,
       skills: profile?.skills ?? [],
       companiesOfInterest: profile?.companies_of_interest ?? [],
+      preferredLocations: profile?.preferred_locations ?? [],
     },
     archivio: {
       items: apps,

@@ -120,4 +120,17 @@ describe("filterAndSortOffers", () => {
     });
     expect(linked.map((o) => o.id)).toEqual(["a"]);
   });
+
+  it("filters to preferred locations including remoto", () => {
+    const mine = filterAndSortOffers(
+      [a, b, c],
+      { ...DEFAULT_OFFER_FILTERS, salary: "my_places" },
+      {
+        skills: [],
+        companiesOfInterest: [],
+        preferredLocations: ["Remoto", "Torino"],
+      },
+    );
+    expect(mine.map((o) => o.id).sort()).toEqual(["b", "c"]);
+  });
 });

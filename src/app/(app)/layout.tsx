@@ -25,6 +25,7 @@ const emptyBootstrap: TabsBootstrap = {
     offers: [],
     skills: [],
     companiesOfInterest: [],
+    preferredLocations: [],
   },
   archivio: { items: [], error: null },
   statistiche: {

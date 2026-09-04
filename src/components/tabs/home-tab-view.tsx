@@ -46,6 +46,7 @@ export function HomeTabView({ data }: { data: TabsBootstrap["home"] }) {
           profileReady={data.profileReady}
           skills={data.skills}
           companiesOfInterest={data.companiesOfInterest}
+          preferredLocations={data.preferredLocations}
         />
       ) : null}
 

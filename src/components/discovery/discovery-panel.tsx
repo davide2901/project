@@ -28,6 +28,7 @@ type Props = {
   profileReady: boolean;
   skills?: string[];
   companiesOfInterest?: string[];
+  preferredLocations?: string[];
 };
 
 type Busy =
@@ -42,6 +43,7 @@ export function DiscoveryPanel({
   profileReady,
   skills = [],
   companiesOfInterest = [],
+  preferredLocations = [],
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -164,8 +166,9 @@ export function DiscoveryPanel({
       filterAndSortOffers(offers, filters, {
         skills,
         companiesOfInterest,
+        preferredLocations,
       }),
-    [offers, filters, skills, companiesOfInterest],
+    [offers, filters, skills, companiesOfInterest, preferredLocations],
   );
   const watching = visible.filter((o) => o.status === "watching");
   const inbox = visible.filter((o) => o.status === "new");
@@ -232,6 +235,7 @@ export function DiscoveryPanel({
           onChange={setFilters}
           resultCount={visible.length}
           totalCount={offers.length}
+          hasPreferredLocations={preferredLocations.length > 0}
         />
       ) : null}
 

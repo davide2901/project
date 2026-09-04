@@ -36,6 +36,7 @@ type FormValues = {
   skills: string;
   cv_fallback_text: string;
   companies_of_interest: string;
+  preferred_locations: string;
   figma_cv_url: string;
   figma_portfolio_url: string;
 };
@@ -47,6 +48,7 @@ function fromProfile(profile: Profile): FormValues {
     skills: profile.skills.join(", "),
     cv_fallback_text: profile.cv_fallback_text ?? "",
     companies_of_interest: profile.companies_of_interest.join("\n"),
+    preferred_locations: (profile.preferred_locations ?? []).join("\n"),
     figma_cv_url: profile.figma_cv_url ?? "",
     figma_portfolio_url: profile.figma_portfolio_url ?? "",
   };
@@ -59,6 +61,7 @@ function sameValues(a: FormValues, b: FormValues): boolean {
     a.skills === b.skills &&
     a.cv_fallback_text === b.cv_fallback_text &&
     a.companies_of_interest === b.companies_of_interest &&
+    a.preferred_locations === b.preferred_locations &&
     a.figma_cv_url === b.figma_cv_url &&
     a.figma_portfolio_url === b.figma_portfolio_url
   );
@@ -287,9 +290,29 @@ export function ProfileForm({
           ) : null}
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-2">
+          <label htmlFor="preferred_locations" className="label-caps">
+            Luoghi
+          </label>
+          <textarea
+            id="preferred_locations"
+            name="preferred_locations"
+            rows={2}
+            value={values.preferred_locations}
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                preferred_locations: e.target.value,
+              }))
+            }
+            className="field resize-y"
+            placeholder={"Milano\nRemoto\nLombardia"}
+          />
+        </section>
+
+        <section className="space-y-2">
           <label htmlFor="companies_of_interest" className="label-caps">
-            Aziende di interesse
+            Aziende
           </label>
           <textarea
             id="companies_of_interest"
@@ -303,9 +326,7 @@ export function ProfileForm({
               }))
             }
             className="field resize-y"
-            placeholder={
-              "Una azienda per riga\n(lascia vuoto se nessuna preferenza)"
-            }
+            placeholder={"Una azienda per riga"}
           />
         </section>
 

@@ -49,6 +49,9 @@ export async function updateProfile(
   const companies = parseList(
     String(formData.get("companies_of_interest") ?? ""),
   );
+  const locations = parseList(
+    String(formData.get("preferred_locations") ?? ""),
+  ).slice(0, 12);
 
   if (!["lavoro", "stage", "entrambi"].includes(jobPreference)) {
     return { error: "Preferenza non valida.", success: false };
@@ -63,6 +66,7 @@ export async function updateProfile(
     job_preference: jobPreference,
     skills,
     companies_of_interest: companies,
+    preferred_locations: locations,
   };
 
   const { error } = await supabase.from("profiles").upsert(payload, {

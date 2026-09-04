@@ -55,6 +55,7 @@ export type Profile = {
   cv_fallback_text: string | null;
   job_preference: JobPreference;
   companies_of_interest: string[];
+  preferred_locations: string[];
   created_at: string;
   updated_at: string;
 };
@@ -69,6 +70,7 @@ export type ProfileUpdate = Partial<
     | "cv_fallback_text"
     | "job_preference"
     | "companies_of_interest"
+    | "preferred_locations"
   >
 >;
 
@@ -171,6 +173,7 @@ export type Database = {
           cv_fallback_text?: string | null;
           job_preference?: JobPreference;
           companies_of_interest?: string[];
+          preferred_locations?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -184,6 +187,7 @@ export type Database = {
           cv_fallback_text?: string | null;
           job_preference?: JobPreference;
           companies_of_interest?: string[];
+          preferred_locations?: string[];
           created_at?: string;
           updated_at?: string;
         };

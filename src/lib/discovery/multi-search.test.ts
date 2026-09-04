@@ -44,6 +44,17 @@ describe("buildDiscoveryAngles", () => {
     });
     expect(angles.map((a) => a.id)).toEqual(["lavoro", "aziende"]);
   });
+
+  it("adds luoghi angle and scopes focus when locations are set", () => {
+    const angles = buildDiscoveryAngles({
+      skills: ["Python"],
+      job_preference: "lavoro",
+      companies_of_interest: [],
+      preferred_locations: ["Milano", "Remoto"],
+    });
+    expect(angles.map((a) => a.id)).toEqual(["lavoro", "luoghi"]);
+    expect(angles[0]?.focus).toContain("Milano");
+  });
 });
 
 describe("mergeDiscoveryOffers", () => {

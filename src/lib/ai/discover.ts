@@ -50,6 +50,7 @@ export type DiscoveryProfileInput = {
   cv_fallback_text: string | null;
   job_preference: JobPreference;
   companies_of_interest: string[];
+  preferred_locations?: string[];
   /** Offerte già in elenco (qualsiasi status): da non ripetere. */
   seen_offers?: SeenOfferRef[];
   watchlist?: SeenOfferRef[];

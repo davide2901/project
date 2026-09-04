@@ -6,6 +6,7 @@ type DiscoveryProfile = {
   cv_fallback_text: string | null;
   job_preference: JobPreference;
   companies_of_interest: string[];
+  preferred_locations?: string[];
 };
 
 export type SeenOfferRef = {
@@ -40,6 +41,13 @@ function formatWatchlist(watchlist: SeenOfferRef[], limit = 20): string {
 ${formatOfferLines(watchlist, limit)}`;
 }
 
+function locationHint(locations: string[]): string {
+  if (locations.length === 0) {
+    return "Nessuna preferenza di luogo: Italia o remote IT va bene.";
+  }
+  return `Privilegia fortemente luoghi tra: ${locations.join(", ")}. Puoi includere remote/ibrido se elencati o se l'utente ha scritto «remoto»/«remote»/«ibrido». Evita altre città se non necessarie.`;
+}
+
 export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
   const preferenceHint =
     profile.job_preference === "lavoro"
@@ -47,6 +55,7 @@ export function buildDiscoverySystemPrompt(profile: DiscoveryProfile): string {
       : profile.job_preference === "stage"
         ? "Cerca SOLO stage, tirocinio o internship."
         : "Puoi includere sia lavoro sia stage/tirocinio/internship.";
+  const locations = profile.preferred_locations ?? [];
 
   return `Sei un assistente di job discovery per candidature oneste.
 
@@ -58,12 +67,13 @@ REGOLE:
 5. Massimo 12 offerte, preferibilmente 6–10 di buona qualità.
 6. ${preferenceHint}
 7. Se companies_of_interest è valorizzato, privilegia offerte di quelle aziende o simili — ma se quelle aziende sono già nella lista «già trovate», cerca altrove.
-8. Classifica position_type correttamente (lavoro | stage | non_chiaro).
-9. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
-10. Se c'è una lista OFFERTA GIÀ TROVATE / GIÀ VISTE: non ripeterle (né varianti minime dello stesso ruolo nella stessa azienda). Preferisci aziende e ruoli nuovi.
-11. Se c'è LISTA DA TENERE D'OCCHIO: sono offerte salvate senza candidatura. Non duplicarle. Puoi usare quelle aziende come segnale di interesse per trovare ALTRE posizioni.
-12. Se c'è OFFERTE SCARTATE: non riproporle.
-13. Rispondi SOLO con JSON conforme allo schema.`;
+8. Luoghi preferiti: ${locationHint(locations)}
+9. Classifica position_type correttamente (lavoro | stage | non_chiaro).
+10. Se le note di ricerca sono vuote o deboli, restituisci poche offerte (anche zero) piuttosto che inventarle; spiega in search_notes.
+11. Se c'è una lista OFFERTA GIÀ TROVATE / GIÀ VISTE: non ripeterle (né varianti minime dello stesso ruolo nella stessa azienda). Preferisci aziende e ruoli nuovi.
+12. Se c'è LISTA DA TENERE D'OCCHIO: sono offerte salvate senza candidatura. Non duplicarle. Puoi usare quelle aziende come segnale di interesse per trovare ALTRE posizioni.
+13. Se c'è OFFERTE SCARTATE: non riproporle.
+14. Rispondi SOLO con JSON conforme allo schema.`;
 }
 
 export function buildDiscoveryUserPrompt(
@@ -83,6 +93,12 @@ export function buildDiscoveryUserPrompt(
   const companies = watchCompanies.length
     ? [...new Set(watchCompanies)].join(", ")
     : "(nessuna preferenza azienda)";
+  const locations = (profile.preferred_locations ?? [])
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const places = locations.length
+    ? locations.join(", ")
+    : "(nessuna preferenza luogo)";
   const cvExcerpt = (profile.cv_fallback_text ?? "").trim().slice(0, 2500);
   const seenBlock = formatSeenOffers(seenOffers);
   const watchBlock = formatWatchlist(extras.watchlist ?? []);
@@ -93,6 +109,7 @@ export function buildDiscoveryUserPrompt(
 Nome: ${profile.full_name ?? "non indicato"}
 Preferenza: ${profile.job_preference}
 Competenze: ${skills}
+Luoghi preferiti: ${places}
 Aziende di interesse: ${companies}
 Estratto CV:
 ${cvExcerpt || "(CV non fornito)"}

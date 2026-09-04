@@ -26,4 +26,12 @@ describe("discovery prompts watchlist", () => {
     expect(prompt).toContain("NoCo");
     expect(prompt).toContain("Aziende di interesse: Acme, WatchCo");
   });
+
+  it("includes preferred locations in the user prompt", () => {
+    const prompt = buildDiscoveryUserPrompt({
+      ...profile,
+      preferred_locations: ["Milano", "Remoto"],
+    });
+    expect(prompt).toContain("Luoghi preferiti: Milano, Remoto");
+  });
 });

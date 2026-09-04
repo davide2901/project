@@ -17,7 +17,8 @@ export type OfferSalaryFilter =
   | "known"
   | "annuncio"
   | "missing"
-  | "with_link";
+  | "with_link"
+  | "my_places";
 
 export type OfferListFilters = {
   sort: OfferSort;
@@ -121,7 +122,7 @@ function matchesSalaryFilter(
   offer: DiscoveredOffer,
   filter: OfferSalaryFilter,
 ): boolean {
-  if (filter === "all") return true;
+  if (filter === "all" || filter === "my_places") return true;
   if (filter === "with_link") return Boolean(offer.source_url?.trim());
   const known = ralMidpoint(offer) != null;
   if (filter === "known") return known;
@@ -129,14 +130,49 @@ function matchesSalaryFilter(
   return offer.salary_source === "annuncio" && known;
 }
 
+/** True se l'offerta cade in uno dei luoghi preferiti (città/remoto/ibrido). */
+export function matchesPreferredLocation(
+  offer: Pick<DiscoveredOffer, "location">,
+  preferredLocations: string[],
+): boolean {
+  const prefs = preferredLocations
+    .map((p) => p.trim().toLowerCase())
+    .filter((p) => p.length >= 2);
+  if (prefs.length === 0) return true;
+
+  const loc = (offer.location ?? "").toLowerCase();
+  const mode = inferWorkMode(offer.location);
+
+  for (const pref of prefs) {
+    if (
+      /^(remoto|remote|da remoto|full.?remote|smart working)$/i.test(pref)
+    ) {
+      if (mode === "remote") return true;
+      continue;
+    }
+    if (/^(ibrido|hybrid|misto)$/i.test(pref)) {
+      if (mode === "hybrid") return true;
+      continue;
+    }
+    if (loc.includes(pref)) return true;
+  }
+  return false;
+}
+
 export function filterAndSortOffers(
   offers: DiscoveredOffer[],
   filters: OfferListFilters,
-  profile: { skills: string[]; companiesOfInterest: string[] } = {
+  profile: {
+    skills: string[];
+    companiesOfInterest: string[];
+    preferredLocations?: string[];
+  } = {
     skills: [],
     companiesOfInterest: [],
+    preferredLocations: [],
   },
 ): DiscoveredOffer[] {
+  const preferred = profile.preferredLocations ?? [];
   const filtered = offers.filter((offer) => {
     if (filters.type !== "all" && offer.position_type !== filters.type) {
       return false;
@@ -144,7 +180,11 @@ export function filterAndSortOffers(
     if (filters.workMode !== "all") {
       if (inferWorkMode(offer.location) !== filters.workMode) return false;
     }
-    if (!matchesSalaryFilter(offer, filters.salary)) return false;
+    if (filters.salary === "my_places") {
+      if (!matchesPreferredLocation(offer, preferred)) return false;
+    } else if (!matchesSalaryFilter(offer, filters.salary)) {
+      return false;
+    }
     return true;
   });
 

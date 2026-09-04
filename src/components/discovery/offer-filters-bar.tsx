@@ -16,6 +16,7 @@ type Props = {
   onChange: (next: OfferListFilters) => void;
   resultCount: number;
   totalCount: number;
+  hasPreferredLocations?: boolean;
 };
 
 export function OfferFiltersBar({
@@ -23,6 +24,7 @@ export function OfferFiltersBar({
   onChange,
   resultCount,
   totalCount,
+  hasPreferredLocations = false,
 }: Props) {
   const extraOn =
     filters.type !== "all" ||
@@ -105,6 +107,9 @@ export function OfferFiltersBar({
             }
           >
             <option value="all">RAL e link: tutti</option>
+            {hasPreferredLocations ? (
+              <option value="my_places">Nei miei luoghi</option>
+            ) : null}
             <option value="known">Con RAL</option>
             <option value="annuncio">RAL da annuncio</option>
             <option value="missing">Senza RAL</option>

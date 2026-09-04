@@ -17,9 +17,15 @@ type ProfileLike = {
   skills: string[];
   job_preference: JobPreference;
   companies_of_interest: string[];
+  preferred_locations?: string[];
 };
 
-/** 2–3 angoli di ricerca distinti (skills / tipo / aziende). */
+function placesPhrase(locations: string[]): string {
+  if (locations.length === 0) return "in Italia (o remote IT)";
+  return `in/near: ${locations.slice(0, 6).join(", ")}`;
+}
+
+/** 2–3 angoli di ricerca distinti (skills / tipo / luoghi / aziende). */
 export function buildDiscoveryAngles(
   profile: ProfileLike,
   opts: { refresh?: boolean } = {},
@@ -27,24 +33,33 @@ export function buildDiscoveryAngles(
   const skills =
     profile.skills.slice(0, 8).join(", ") || "competenze del profilo";
   const companies = profile.companies_of_interest.slice(0, 5);
+  const locations = (profile.preferred_locations ?? [])
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+  const where = placesPhrase(locations);
   const refresh = Boolean(opts.refresh);
 
   if (refresh) {
+    const geoFocus =
+      locations.length > 0
+        ? `altre offerte nelle zone preferite (${locations.join(", ")}) o remote IT per: ${skills}. Solo posizioni non già viste.`
+        : `offerte in altre città italiane o remote per: ${skills}. Solo posizioni non già viste.`;
     return [
       {
         id: "alternative",
         label: "aziende alternative",
-        focus: `offerte DIVERSE da quelle già viste: altre aziende italiane (PMI, scale-up, corporate diverse) per: ${skills}. Evita di ripetere ruoli già trovati.`,
+        focus: `offerte DIVERSE da quelle già viste: altre aziende ${where} per: ${skills}. Evita di ripetere ruoli già trovati.`,
       },
       {
         id: "geo",
-        label: "altre città / remote",
-        focus: `offerte in altre città italiane o remote per: ${skills}. Solo posizioni non già viste.`,
+        label: "luoghi / remote",
+        focus: geoFocus,
       },
       {
         id: "ruoli",
         label: "ruoli contigui",
-        focus: `ruoli contigui/adjacenti (non gli stessi titoli già visti) per: ${skills}`,
+        focus: `ruoli contigui/adjacenti ${where} (non gli stessi titoli già visti) per: ${skills}`,
       },
     ].slice(0, 3);
   }
@@ -55,38 +70,46 @@ export function buildDiscoveryAngles(
     angles.push({
       id: "stage",
       label: "stage/tirocinio",
-      focus: `stage, tirocinio o internship in Italia (o remote IT) per: ${skills}`,
+      focus: `stage, tirocinio o internship ${where} per: ${skills}`,
     });
   } else if (profile.job_preference === "lavoro") {
     angles.push({
       id: "lavoro",
       label: "lavoro",
-      focus: `posizioni di lavoro (no stage) in Italia (o remote IT) per: ${skills}`,
+      focus: `posizioni di lavoro (no stage) ${where} per: ${skills}`,
     });
   } else {
     angles.push({
       id: "lavoro",
       label: "lavoro",
-      focus: `posizioni di lavoro in Italia (o remote IT) per: ${skills}`,
+      focus: `posizioni di lavoro ${where} per: ${skills}`,
     });
     angles.push({
       id: "stage",
       label: "stage",
-      focus: `stage/tirocinio/internship in Italia (o remote IT) per: ${skills}`,
+      focus: `stage/tirocinio/internship ${where} per: ${skills}`,
     });
   }
 
-  if (companies.length > 0) {
+  if (locations.length > 0 && angles.length < 3) {
+    angles.push({
+      id: "luoghi",
+      label: "luoghi preferiti",
+      focus: `offerte aperte ${where} allineate a: ${skills}`,
+    });
+  }
+
+  if (companies.length > 0 && angles.length < 3) {
     angles.push({
       id: "aziende",
       label: "aziende di interesse",
-      focus: `offerte aperte presso o simili a: ${companies.join(", ")} (profilo: ${skills})`,
+      focus: `offerte aperte presso o simili a: ${companies.join(", ")} (${where}; profilo: ${skills})`,
     });
   } else if (angles.length < 2) {
     angles.push({
       id: "ampliato",
       label: "ruoli correlati",
-      focus: `ruoli correlati / junior / mid in Italia per: ${skills}`,
+      focus: `ruoli correlati / junior / mid ${where} per: ${skills}`,
     });
   }
 
@@ -122,11 +145,5 @@ export function filterNovelOffers(
     role_title: o.role_title,
     source_url: o.source_url ?? null,
   }));
-  const out: DiscoveredOfferItem[] = [];
-  for (const offer of offers) {
-    if (isDuplicateOffer(offer, seen) || isDuplicateOffer(offer, out)) continue;
-    out.push(offer);
-    if (out.length >= DISCOVERY_OFFER_CAP) break;
-  }
-  return out;
+  return offers.filter((o) => !isDuplicateOffer(o, seen));
 }
